@@ -4,7 +4,7 @@
   "type": "module",
   "main": "index.js",
   "engines": { "node": "22" },
-  "scripts": { "test": "node test.js" },
+  "scripts": { "test": "node -e \"import('./index.js')\"" },
   "dependencies": {
     "firebase-admin": "^12.7.0",
     "firebase-functions": "^6.1.0"

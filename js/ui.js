@@ -25,6 +25,7 @@ ui.init = function (a) {
   $('btnRules').onclick = () => ui.open('rules');
   $('btnAdmin').onclick = () => ui.openAdmin();
   $('btnApGift').onclick = ui.adminGift;
+  $('btnCardAdd').onclick = addCard;
   $('btnApAdd').onclick = () => ui.adminSet($('apAdminPid').value, true);
   for (const id of ['apGiftPid', 'apAdminPid']) $(id).addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
   $('btnSettings').onclick = () => ui.openSettings();
@@ -215,17 +216,25 @@ ui.renderShop = function () {
   } else if (shopTab === 'donate') {
     const pack = p => `<div class="dcard ${p.cur}">${p.tag ? `<span class="dtag">${p.tag}</span>` : ''}
         <div class="damt">${curIco(p.cur)} <b>${fmt(p.n)}</b></div><div class="dname">${p.cur === 'diamond' ? 'olmos' : 'oltin'}</div>
-        <button class="btn ${p.cur === 'diamond' ? 'blue' : 'gold'}" data-don="${p.id}">${fmt(p.uzs)} so'm</button><div class="dusd">≈ $${p.usd.toFixed(2)}</div></div>`;
-    const ways = payWays(), way = curWay();
-    const pick = ways.length > 1 ? `<div class="sec-title">TO'LOV USULI</div><div class="payway">${ways.map(w => `<button class="btn ${w === way ? 'green' : ''}" data-pw="${w}">${PAY_NAME[w]}</button>`).join('')}</div>` : '';
-    body.innerHTML = `<div class="sub" style="text-align:left">Kurs: <b>30 olmos = $1</b>, <b>200 oltin = $0.30</b>. To'lov tasdiqlangan zahoti hisobingizga tushadi.</div>
-      ${pick}
-      <div class="sec-title">OLMOS</div><div class="dgrid">${DONATE.filter(p => p.cur === 'diamond').map(pack).join('')}</div>
-      <div class="sec-title">OLTIN</div><div class="dgrid">${DONATE.filter(p => p.cur === 'gold').map(pack).join('')}</div>
+        <button class="btn ${p.cur === 'diamond' ? 'blue' : 'gold'}" data-don="${p.id}">$${p.usd.toFixed(2)}</button><div class="dusd">${fmt(p.uzs)} so'm</div></div>`;
+    const card = d.payCard;
+    body.innerHTML = `<div class="sub" style="text-align:left">Kurs: <b>30 olmos = $1</b>, <b>200 oltin = $0.30</b>. To'lov faqat <b>VISA</b> karta bilan. Pul yechilgan zahoti hisobingizga tushadi.</div>
       <div class="sec-title">TO'LOV KARTASI</div>
-      <div class="lrow"><span class="ic" style="--c:#42a5f5">💳</span><div class="info"><b>Uzcard · Humo · Visa</b><div>Karta ${ways.length ? ways.map(w => PAY_NAME[w]).join(' / ') : 'Payme / Click'} sahifasida kiritiladi. U yerda kartani bir marta saqlasangiz, keyingi to'lovlarda o'sha karta o'zi tanlanadi. Karta raqami o'yinga berilmaydi.</div></div></div>`;
+      <div class="lrow paycard">${card ? `<div class="visa mini"><b>VISA</b><span>•••• ${esc(card.last4)}</span></div>
+          <div class="info"><b>Visa •••• ${esc(card.last4)}</b><div>${card.exp ? 'Amal qilish muddati: ' + esc(card.exp) + '. ' : ''}Donatlar shu kartadan bir bosishda yechiladi.</div></div>
+          <button class="btn small red" id="btnCardDel">O'chirish</button>`
+        : `<div class="visa mini off"><b>VISA</b><span>•••• ••••</span></div>
+          <div class="info"><b>Karta qo'shilmagan</b><div>Donat qilish uchun avval Visa kartangizni qo'shing — bir marta.</div></div>
+          <button class="btn blue" id="btnAddCard">+ Visa karta qo'shish</button>`}</div>
+      <div class="sec-title">OLMOS</div><div class="dgrid">${DONATE.filter(p => p.cur === 'diamond').map(pack).join('')}</div>
+      <div class="sec-title">OLTIN</div><div class="dgrid">${DONATE.filter(p => p.cur === 'gold').map(pack).join('')}</div>`;
     body.querySelectorAll('[data-don]').forEach(b => b.onclick = () => ui.donate(DONATE.find(p => p.id === b.dataset.don)));
-    body.querySelectorAll('[data-pw]').forEach(b => b.onclick = () => { try { localStorage.setItem('tj_payway', b.dataset.pw); } catch (e) { } SND.play('click'); ui.renderShop(); });
+    if ($('btnAddCard')) $('btnAddCard').onclick = () => ui.openCard();
+    if ($('btnCardDel')) $('btnCardDel').onclick = async () => {
+      if (!(await ui.confirm(`Visa •••• ${esc(card.last4)} kartasini o'chirasizmi?<br>Keyingi donatda kartani qayta qo'shasiz.`))) return;
+      try { if (app.backend.removeCard) await app.backend.removeCard(); } catch (e) { ui.toast(e.message, true); return; }
+      delete d.payCard; app.saveSoon(); ui.renderShop(); ui.toast("Karta o'chirildi");
+    };
   } else if (shopTab === 'exchange') {
     const w = d.wallet, maxG = Math.floor(w.sir / RATE.SIR_PER_GOLD), maxD = Math.floor(w.gold / RATE.GOLD_PER_DIAMOND);
     body.innerHTML = `<div class="exch">
@@ -354,39 +363,41 @@ ui.openGift = function (f) {
 };
 
 // ---------------- donat ----------------
-const PAY_NAME = { payme: 'Payme', click: 'Click' };
-function payWays() {
-  const w = [];
-  if (PAYMENT.payme && PAYMENT.payme.merchantId) w.push('payme');
-  if (PAYMENT.click && PAYMENT.click.serviceId && PAYMENT.click.merchantId) w.push('click');
-  return w;
-}
-function curWay() { const w = payWays(); let s = null; try { s = localStorage.getItem('tj_payway'); } catch (e) { } return w.includes(s) ? s : w[0]; }
-// to'lov sahifasi manzili (buyurtma raqami bilan — server aynan shu buyurtmani tekshiradi)
-function payUrl(way, order) {
-  const back = location.origin + location.pathname;
-  if (way === 'payme') {
-    const p = PAYMENT.payme, q = `m=${p.merchantId};ac.order_id=${order.id};a=${order.uzs * 100};l=uz;c=${back}`;
-    return (p.test ? 'https://checkout.test.paycom.uz/' : 'https://checkout.paycom.uz/') + btoa(q);
-  }
-  const c = PAYMENT.click;
-  return `https://my.click.uz/services/pay?service_id=${encodeURIComponent(c.serviceId)}&merchant_id=${encodeURIComponent(c.merchantId)}&amount=${order.uzs}&transaction_param=${encodeURIComponent(order.id)}&return_url=${encodeURIComponent(back)}`;
-}
+const packName = pk => `${fmt(pk.n)} ${pk.cur === 'diamond' ? 'olmos' : 'oltin'}`;
+// donat: karta bo'lmasa — avval Visa karta qo'shiladi; bo'lsa — tasdiqlab, o'sha kartadan yechiladi
 ui.donate = async function (pk) {
   if (!pk) return;
-  const way = curWay(), what = `${fmt(pk.n)} ${pk.cur === 'diamond' ? 'olmos' : 'oltin'}`;
-  if (!way || !app.backend.createOrder) { ui.payNotReady(`${what} — ${fmt(pk.uzs)} so'm`); return; }
-  // oyna darhol ochiladi (aks holda brauzer bloklaydi), manzil buyurtma yaratilgach beriladi
-  const w = window.open('', '_blank');
+  const card = app.data.payCard;
+  if (!card) { ui.openCard(pk); return; }
+  if (!(await ui.confirm(`<b>${packName(pk)}</b><br><br>💳 Visa •••• ${esc(card.last4)} kartasidan <b>$${pk.usd.toFixed(2)}</b> (${fmt(pk.uzs)} so'm) yechiladi.<br>Tasdiqlaysizmi?`))) return;
+  if (!PAYMENT.ready || !app.backend.chargeCard) { ui.payNotReady(`${packName(pk)} — $${pk.usd.toFixed(2)}`); return; }
   try {
-    const order = await app.backend.createOrder(pk.id, way);
-    const url = payUrl(way, order);
-    if (w) { w.opener = null; w.location.href = url; } else location.href = url;
-    ui.toast(`${PAY_NAME[way]} sahifasi ochildi: ${what}. To'lovdan so'ng hisobingizga o'zi tushadi.`);
-  } catch (e) { if (w) w.close(); SND.play('error'); ui.toast(e.message || "To'lovni boshlab bo'lmadi", true); }
+    ui.toast("To'lov bajarilmoqda...");
+    await app.backend.chargeCard(pk.id); // pul tushgach server olmos/oltinni yuboradi — o'yin uni o'zi oladi
+  } catch (e) { SND.play('error'); ui.toast(e.message || "Kartadan yechib bo'lmadi", true); }
 };
+// Visa karta qo'shish oynasi (karta raqami Octo'ning himoyalangan sahifasida kiritiladi)
+let cardFor = null;
+ui.openCard = function (pk) {
+  cardFor = pk || null;
+  $('cardFor').innerHTML = pk ? `Donat: <b>${packName(pk)} — $${pk.usd.toFixed(2)}</b>.<br>Buning uchun avval Visa kartangizni qo'shing.` : 'Kartani bir marta qo\'shasiz — keyingi donatlar bir bosishda.';
+  $('cardMsg').textContent = ''; $('cardMsg').className = 'msg';
+  ui.open('cardModal'); SND.play('click');
+};
+async function addCard() {
+  const m = $('cardMsg');
+  if (!PAYMENT.ready || !app.backend.addCard) {
+    m.innerHTML = `⏳ Visa to'lovi tez orada ulanadi. Hozircha donat uchun admin bilan bog'laning, ID: <b>${esc(app.profile.pid)}</b>`; m.className = 'msg bad'; SND.play('error'); return;
+  }
+  const w = window.open('', '_blank'); // darhol ochiladi, aks holda brauzer bloklaydi
+  try {
+    const url = await app.backend.addCard(cardFor && cardFor.id);
+    if (w) { w.opener = null; w.location.href = url; } else location.href = url;
+    m.textContent = "Visa sahifasi ochildi. Karta tasdiqlangach shu yerda paydo bo'ladi."; m.className = 'msg ok';
+  } catch (e) { if (w) w.close(); m.textContent = e.message || "Kartani qo'shib bo'lmadi"; m.className = 'msg bad'; }
+}
 ui.payNotReady = function (what) {
-  ui.confirm(`<b>${esc(what)}</b><br><br>Karta orqali to'lov hali ulanmagan — to'lov tizimi (Payme / Click) sozlanmoqda.<br><br>Hozircha donat uchun admin bilan bog'laning va o'z ID raqamingizni yuboring: <b>${esc(app.profile.pid)}</b>`).then(() => { });
+  ui.confirm(`<b>${esc(what)}</b><br><br>Visa karta orqali to'lov tez orada ulanadi.<br><br>Hozircha donat uchun admin bilan bog'laning va o'z ID raqamingizni yuboring: <b>${esc(app.profile.pid)}</b>`).then(() => { });
 };
 
 // ---------------- admin panel ----------------

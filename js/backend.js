@@ -217,7 +217,7 @@ async function firebaseBackend(cfg) {
   // donat buyurtmasi: server to'lovni shu buyurtma bo'yicha tekshiradi va olmos/oltinni sovg'a qilib yuboradi
   B.createOrder = async (pack, provider) => {
     const pk = DONATE.find(p => p.id === pack); if (!pk) throw new Error("To'plam topilmadi");
-    const ref = await addDoc(collection(db, 'orders'), { uid: me.uid, pack, provider, amount: pk.uzs * 100, status: 'new', created: serverTimestamp() });
+    const ref = await addDoc(collection(db, 'orders'), { uid: me.uid, pack, provider: provider || 'octo', amount: pk.uzs * 100, status: 'new', created: serverTimestamp() });
     return { id: ref.id, uzs: pk.uzs };
   };
   B.watchGifts = cb => onSnapshot(query(collection(db, 'gifts'), where('to', '==', me.uid)), async snap => {

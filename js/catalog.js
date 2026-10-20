@@ -12,7 +12,7 @@ export const ADMIN_WALLET = { gold: 1000, diamond: 100 };
 export const GIFT_MAX = 100000;
 
 // ---------------- DONAT (haqiqiy pulga) ----------------
-// Kurs: 30 olmos = 1$, 200 oltin = 0.30$. Payme/Click so'mda oladi (uzs).
+// Kurs: 30 olmos = 1$, 200 oltin = 0.30$ (uzs — so'mdagi qiymati).
 // Narxni o'zgartirsangiz, functions/packs.js da ham xuddi shunday o'zgartiring!
 export const DONATE = [
   { id: 'd30', cur: 'diamond', n: 30, usd: 1, uzs: 12900 },

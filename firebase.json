@@ -1,5 +1,5 @@
 {
-  "functions": [{ "source": "functions", "codebase": "default", "runtime": "nodejs22", "ignore": ["node_modules", "test.js"] }],
+  "functions": [{ "source": "functions", "codebase": "default", "runtime": "nodejs22", "ignore": ["node_modules"] }],
   "firestore": { "rules": "firestore.rules" },
   "database": { "rules": "database.rules.json" }
 }

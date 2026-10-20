@@ -60,7 +60,7 @@ service cloud.firestore {
     match /orders/{oid} {
       allow read: if signedIn() && resource.data.uid == me();
       allow create: if signedIn() && request.resource.data.uid == me() && request.resource.data.status == 'new'
-        && request.resource.data.pack is string && request.resource.data.provider in ['payme', 'click'];
+        && request.resource.data.pack is string && request.resource.data.provider == 'octo';
     }
 
     // Do'stlik so'rovlari: hujjat id = "<kimga>_<kimdan>"

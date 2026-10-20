@@ -16,12 +16,9 @@ export const FIREBASE_CONFIG = {
 };
 
 // ============================================================
-//  DONAT TO'LOVLARI (Uzcard / Humo / Visa karta — Payme va Click orqali)
-//  Kabinetdan olingan ID'larni shu yerga yozing (bular maxfiy emas).
-//  Maxfiy kalitlar (PAYME_KEY, CLICK_SECRET) faqat serverda — O'QING.md ga qarang.
-//  Bo'sh qolsa, donat tugmasi "to'lov ulanmagan" deydi.
+//  DONAT TO'LOVLARI — faqat VISA karta (Octo ekvayringi orqali)
+//  Karta raqami o'yinga kelmaydi: u Octo'ning himoyalangan sahifasida kiritiladi,
+//  biz faqat kartaning kalitini (token) saqlaymiz va keyingi to'lovlarni shu bilan yechamiz.
+//  ready: false bo'lsa, tugmalar "tez orada ulanadi" deydi.
 // ============================================================
-export const PAYMENT = {
-  payme: { merchantId: '', test: false },   // Payme Business -> Kassa -> ID (test: true = sinov kassasi)
-  click: { serviceId: '', merchantId: '' }, // Click Merchant -> Servis -> service_id va merchant_id
-};
+export const PAYMENT = { provider: 'octo', ready: false, shopId: '' };

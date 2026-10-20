@@ -44,7 +44,7 @@ Haqiqiy onlayn akkauntlar (Google bilan kirish, ID orqali do'stlik) uchun bepul 
 Boshqa odamlar ham o'ynashi uchun o'yinni internetga joylash kerak (masalan **Firebase Hosting**: `npm install -g firebase-tools`, `firebase init hosting`, `firebase deploy`). Joylangan domenni Authentication → Settings → **Authorized domains** ga qo'shing.
 
 ## Muhim eslatmalar
-- Valyuta (sir, oltin, olmos) hozircha o'yinchining o'z qurilmasi/akkauntida saqlanadi. Haqiqiy pulga olmos sotmoqchi bo'lsangiz, to'lov tizimi (masalan Payme, Click, Stripe) va server tomonida tekshiruv (Firebase Cloud Functions) qo'shish kerak — aks holda tajribali odam valyutani o'zgartirib olishi mumkin.
+- Valyuta (sir, oltin, olmos) hozircha o'yinchining o'z qurilmasi/akkauntida saqlanadi. Haqiqiy pulga olmos sotmoqchi bo'lsangiz, Visa to'lov tizimi (Octo) va server tomonida tekshiruv (Firebase Cloud Functions) qo'shish kerak — aks holda tajribali odam valyutani o'zgartirib olishi mumkin.
 - "Tom and Jerry" nomi va personajlari Warner Bros. kompaniyasiga tegishli. Shaxsiy o'yin sifatida muammo yo'q, lekin o'yinni sotish yoki pul ishlash uchun litsenziya kerak yoki nom/personajlarni o'zgartirish kerak.
 - Grafika juda og'ir bo'lsa: Sozlamalar → Grafika sifati → "Past". "Avtomatik ruxsat" yoqilgan bo'lsa, o'yin FPS ga qarab o'zi moslashadi.
 
@@ -56,65 +56,29 @@ Boshqa odamlar ham o'ynashi uchun o'yinni internetga joylash kerak (masalan **Fi
 - `js/ai.js` — Tom va Jerryning sun'iy intellekti
 - `js/match.js` — o'yin qoidalari va boshqaruv
 - `js/backend.js`, `js/config.js` — akkaunt va do'stlar
-- `functions/` — to'lov serveri (Payme va Click), `firebase.json` — Firebase sozlamasi
+- `functions/` — to'lov serveri (Visa / Octo), `firebase.json` — Firebase sozlamasi
 
-## Donat: karta orqali to'lov (Payme / Click)
+## Donat: faqat VISA karta (Octo)
 
-To'lov shunday ishlaydi:
+O'yinchi uchun qanday ishlaydi:
 
-1. O'yinchi Donat bo'limida to'plamni bosadi. O'yin buyurtma (`orders`) yaratib, Payme yoki Click sahifasini ochadi.
-2. O'yinchi u yerda kartasini (Uzcard, Humo, Visa) kiritib to'laydi.
-3. Payme yoki Click bizning serverga (`functions/`) xabar beradi. Server summani tekshiradi va o'yinchiga olmos yoki oltinni "sovg'a" qilib yuboradi.
-4. O'yin uni darhol oladi: "💳 To'lov qabul qilindi". Bitta to'lov ikki marta tushmaydi.
+1. Do'kon → **Donat**. Karta qo'shilmagan bo'lsa, o'yinchi **"+ Visa karta qo'shish"** ni bosadi.
+2. Karta raqami bankning himoyalangan sahifasida kiritiladi, o'yinga kelmaydi. Karta tasdiqlansa, o'yinda **Visa •••• 1234** ko'rinadi.
+3. Keyin har bir donat bir bosishda bo'ladi. Pul yechilib, hisobga tushgach, server olmos yoki oltinni yuboradi va o'yin uni darhol oladi.
 
-Narxlar so'mda `js/catalog.js` (DONATE) va `functions/packs.js` da yozilgan. Ikkalasi bir xil bo'lishi shart.
+Narxlar `js/catalog.js` (DONATE) va `functions/packs.js` da yozilgan. Ikkalasi bir xil bo'lishi shart.
 
-### 1-qadam: Firebase'da Blaze tarifini yoqish
+### Ulash uchun kerak
 
-Server (Cloud Functions) faqat Blaze tarifida ishlaydi. Har oy katta bepul limit bor, kichik o'yin uchun odatda bir necha sent chiqadi.
-Firebase Console → chap pastda **Upgrade** → **Blaze** → karta qo'shish. Xavfsizlik uchun byudjet ogohlantirishini (masalan, $5) qo'ying.
+1. **Octo bilan shartnoma**: octobank.uz → E-commerce, YaTT nomidan. Shartnomadan keyin ular quyidagilarni beradi:
+   - `shop_id`;
+   - maxfiy kalit;
+   - API hujjatlari (karta tokenizatsiyasi, yechish, webhook).
+2. **Firebase Blaze tarifi**: server (Cloud Functions) shusiz ishlamaydi. Byudjet ogohlantirishini qo'ying, masalan $5.
+3. Shu ikkalasi tayyor bo'lgach, `functions/index.js` ga Octo ulanadi va `js/config.js` da `PAYMENT.ready = true` qilinadi.
 
-### 2-qadam: serverni joylash (bir marta)
-
-Kompyuterda (Node.js o'rnatilgan) loyiha papkasida:
-
-```
-npm install -g firebase-tools
-firebase login
-cd functions && npm install && cd ..
-firebase functions:secrets:set PAYME_KEY
-firebase functions:secrets:set CLICK_SECRET
-firebase deploy --only functions
-```
-
-- `PAYME_KEY` — Payme kabinetidagi kalit (sinov uchun avval test kaliti).
-- `CLICK_SECRET` — Click kabinetidagi SECRET_KEY.
-- Faqat bitta tizimni ulasangiz, faqat o'shaning kalitini kiriting va faqat o'shani joylang: `firebase deploy --only functions:payme` yoki `functions:click`.
-
-Joylangach, quyidagi manzillar chiqadi:
-
-- Payme: `https://europe-west1-tom-and-jerry-katta-uy.cloudfunctions.net/payme`
-- Click: `https://europe-west1-tom-and-jerry-katta-uy.cloudfunctions.net/click`
-
-### 3-qadam: Payme Business kabineti (business.payme.uz)
-
-- Kassa yarating. Turi: "Internet-do'kon / Merchant API".
-- **Endpoint URL**: yuqoridagi `.../payme` manzili.
-- **Hisob (account) maydoni**: `order_id`.
-- Kassa **ID** sini `js/config.js` → `PAYMENT.payme.merchantId` ga yozing.
-- Sinov paytida `test: true` qiling va test.paycom.uz da sinov tranzaksiyalarini o'tkazing. Hammasi yashil bo'lgach, asosiy kalitni `PAYME_KEY` ga qo'yib, `test: false` qiling.
-
-### 4-qadam: Click Merchant kabineti (merchant.click.uz)
-
-- Servis sozlamalari:
-  - **Prepare URL** va **Complete URL**: ikkalasiga ham `.../click` manzili.
-  - `service_id` va `merchant_id` ni `js/config.js` → `PAYMENT.click` ga yozing.
-- Ixtiyoriy: `functions/.env` fayliga `CLICK_SERVICE_ID=...` yozsangiz, server boshqa servis so'rovlarini rad etadi.
-
-### Sinov
+Maxfiy kalit hech qachon o'yin fayllariga yozilmaydi. U faqat serverga quyidagi buyruq bilan kiritiladi:
 
 ```
-cd functions && node test.js
+firebase functions:secrets:set OCTO_SECRET
 ```
-
-Bu buyruq to'lov mantig'ini xotirada sinaydi: summa xatosi, takror so'rov, bekor qilish va 12 soatlik muddat.
