@@ -20,6 +20,7 @@ export function detectQuality() {
   try {
     const c = document.createElement('canvas'), gl = c.getContext('webgl2');
     if (!gl) return 'low';
+    if (matchMedia('(pointer: coarse)').matches) return 'low';
     const ext = gl.getExtension('WEBGL_debug_renderer_info');
     const name = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : '';
     if (/Mali|Adreno|PowerVR|SwiftShader|llvmpipe/i.test(name)) return 'low';

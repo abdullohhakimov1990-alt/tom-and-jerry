@@ -1,6 +1,6 @@
 // O'yin ichidagi HUD: Tom ko'zi, xarita (aylanadigan), katta xarita, qizil chekka, jonlar, vaqt, buyumlar paneli.
 import { ITEMS } from './catalog.js';
-import { SX, SZ } from './house.js';
+import { SX, SZ, BOUNDS } from './house.js';
 
 const $ = id => document.getElementById(id);
 const H = {};
@@ -18,10 +18,14 @@ H.show = on => { el.hud.classList.toggle('hidden', !on); if (!on) { el.bigmap.cl
 
 // ---------------- xarita asosi ----------------
 function buildBase(world) {
-  base = document.createElement('canvas'); base.width = SX * PPU; base.height = SZ * PPU;
+  base = document.createElement('canvas'); base.width = (BOUNDS.x1 - BOUNDS.x0) * PPU; base.height = (BOUNDS.z1 - BOUNDS.z0) * PPU;
   bctx = base.getContext('2d');
   const g = bctx;
-  g.fillStyle = '#20150c'; g.fillRect(0, 0, base.width, base.height);
+  g.fillStyle = '#4f8a35'; g.fillRect(0, 0, base.width, base.height);
+  g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(2, 2, base.width - 4, base.height - 4);
+  g.translate(-BOUNDS.x0 * PPU, -BOUNDS.z0 * PPU);   // endi dunyo koordinatalari bilan chizamiz
+  g.fillStyle = '#c8bba5'; g.fillRect((28 + 13 - 5) * PPU, SZ * PPU, 10 * PPU, (BOUNDS.z1 - SZ) * PPU);
+  g.fillStyle = '#20150c'; g.fillRect(0, 0, SX * PPU, SZ * PPU);
   for (const R of world.rooms) {
     g.fillStyle = R.st.map; g.fillRect(R.ox * PPU, R.oz * PPU, 26 * PPU, 26 * PPU);
     g.fillStyle = 'rgba(0,0,0,.08)'; for (let i = 0; i < 26; i += 2) g.fillRect(R.ox * PPU, (R.oz + i) * PPU, 26 * PPU, PPU);
@@ -30,7 +34,7 @@ function buildBase(world) {
   for (const c of world.colliders) {
     if (c.maxY < .8 || c.minY > 1.4 || c.maxX - c.minX > 30 || c.maxZ - c.minZ > 30) continue;
     const wall = c.maxY >= 13.9;
-    g.fillStyle = wall ? '#120a05' : c.tag === 'hide' ? 'rgba(0,0,0,0)' : 'rgba(40,22,10,.55)';
+    g.fillStyle = wall ? '#120a05' : c.tag === 'hide' ? 'rgba(0,0,0,0)' : c.tag === 'bush' ? '#2e6b22' : 'rgba(40,22,10,.55)';
     g.fillRect(c.minX * PPU, c.minZ * PPU, (c.maxX - c.minX) * PPU, (c.maxZ - c.minZ) * PPU);
   }
   // Jerryning ostidan o'tish joylari (stol, karavot)
@@ -78,7 +82,7 @@ H.drawMap = function (d) {
   g.rotate(Math.PI + d.yaw);            // o'yinchi qaragan tomon tepada
   g.scale(scale, scale);
   g.translate(-me.x * PPU, -me.z * PPU);
-  g.drawImage(base, 0, 0);
+  g.drawImage(base, BOUNDS.x0 * PPU, BOUNDS.z0 * PPU);
   const P = (p) => [p.x * PPU, p.z * PPU];
   // sirlar
   g.fillStyle = '#ffd23f';
@@ -113,6 +117,7 @@ H.drawBig = function (d, rooms) {
   g.fillStyle = '#20150c'; g.fillRect(0, 0, c.width, c.height);
   g.save(); g.translate((c.width - base.width * k) / 2, (c.height - base.height * k) / 2); g.scale(k, k);
   g.drawImage(base, 0, 0);
+  g.translate(-BOUNDS.x0 * PPU, -BOUNDS.z0 * PPU);
   g.fillStyle = 'rgba(255,255,255,.85)'; g.font = 'bold 16px sans-serif'; g.textAlign = 'center';
   for (const R of rooms) g.fillText(R.name, (R.ox + 13) * PPU, (R.oz + 3) * PPU);
   for (const h of d.hides) { g.fillStyle = d.hiddenSpot === h ? '#ff4081' : d.guide === h ? '#7dff9e' : 'rgba(80,230,120,.9)'; g.fillRect(h.x * PPU - 4, h.z * PPU - 4, 8, 8); }

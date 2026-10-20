@@ -8,6 +8,7 @@ import { hud } from './hud.js';
 import { ITEMS } from './catalog.js';
 import * as PR from './props.js';
 import { TomAI, JerryAI } from './ai.js';
+import { attachTouch, isTouch } from './touch.js';
 
 export const MATCH_TIME = 180, LIVES = 3, HIDE_MAX = 25;
 const SPD = { jerry: { run: 9, sprint: 12.6, jump: 14.4 }, tom: { run: 10.6, sprint: 13.4, jump: 14.9 } };
@@ -39,6 +40,7 @@ export class Match {
     this.player = me === 'jerry' ? this.jerry : this.tom;
     this.cam.yaw = this.player.yaw; this.cam.cur = me === 'jerry' ? 4.2 : 7;
     this.bind();
+    if (isTouch()) attachTouch(this);
     hud.show(true);
     SND.setMood('chase');
     SND.playMusic(app.data.equip.music);
@@ -85,9 +87,13 @@ export class Match {
     this.h.td = e => { if (e.pointerType !== 'mouse') this.drag = [e.clientX, e.clientY]; };
     this.h.tu = () => { this.drag = null; };
     c.addEventListener('pointerdown', this.h.td); window.addEventListener('pointermove', this.h.tm); window.addEventListener('pointerup', this.h.tu);
-    hud.lockHint(true);
+    this.h.hb = e => { const sl = e.target.closest('.slot'); if (sl) { e.preventDefault(); this.useItem(+sl.dataset.i); } };
+    document.getElementById('hotbar').addEventListener('pointerdown', this.h.hb);
+    hud.lockHint(!isTouch());
   }
+  toggleBig() { hud.toggleBig(this.bigOn); }
   lock() {
+    if (isTouch()) { hud.lockHint(false); return; }
     const c = gfx.renderer.domElement;
     const plain = () => { try { const q = c.requestPointerLock(); if (q && q.catch) q.catch(() => hud.lockHint(true)); } catch (e) { hud.lockHint(true); } };
     try { const p = c.requestPointerLock({ unadjustedMovement: true }); if (p && p.catch) p.catch(plain); } catch (e) { plain(); }
@@ -106,7 +112,7 @@ export class Match {
     if (this.phase !== 'play') return;
     if (k === 'KeyC') this.pressC();
     else if (k === 'KeyV') this.cam.fp = !this.cam.fp;
-    else if (k === 'KeyM') { this.bigOn = !this.bigOn; hud.toggleBig(this.bigOn); }
+    else if (k === 'KeyM') { this.bigOn = !this.bigOn; this.toggleBig(); }
     else if (k === 'KeyQ' && this.me === 'tom') this.pounce(this.tom);
     else if (/^Digit[1-9]$/.test(k)) this.useItem(+k.slice(5) - 1);
   }
@@ -243,7 +249,8 @@ export class Match {
         break;
     }
     if (!ok) { SND.play('error'); return; }
-    this.inv[it.id]--; this.app.saveSoon();
+    if (!this.app.isAdmin) this.inv[it.id]--;
+    this.app.saveSoon();
     this.active[it.id] = true; setTimeout(() => { this.active[it.id] = false; }, 400);
     SND.play('power');
     if (!['heart', 'sniff'].includes(it.id)) hud.toast(it.name + '!', 'green', 1);
@@ -352,23 +359,25 @@ export class Match {
     if (k.KeyA || k.ArrowLeft) fx -= 1; if (k.KeyD || k.ArrowRight) fx += 1;
     const y = this.cam.yaw, fwd = [Math.sin(y), Math.cos(y)], right = [-Math.cos(y), Math.sin(y)];
     let dir = null;
+    const tc = this.touch;
+    if (tc && tc.active) { fx = tc.mx; fz = tc.mz; }
     if (fx || fz) { const dx = fwd[0] * fz + right[0] * fx, dz = fwd[1] * fz + right[1] * fx, L = Math.hypot(dx, dz); dir = [dx / L, dz / L]; }
     const S = SPD[P.kind];
-    const wantSprint = (k.ShiftLeft || k.ShiftRight) && dir;
+    const wantSprint = (k.ShiftLeft || k.ShiftRight || (tc && tc.sprint)) && dir;
     P.sprinting = wantSprint && P.stam > .02;
     P.stam = clamp(P.stam + (P.sprinting ? -.27 : .2) * dt, 0, 1);
-    // orqaga yurish sekinroq (Minecraft kabi)
-    P.backward = fz < 0 && !fx ? true : fz < 0;
-    P.sprinting = P.sprinting && fz > 0;
     let sp = P.sprinting ? S.sprint : S.run;
-    if (fz < 0) sp *= .7;
+    // 1-shaxs ko'rinishda orqaga yurish sekinroq
+    P.backward = this.isFP() && fz < 0;
+    if (P.backward) { sp *= .7; P.sprinting = false; }
     if (P.speedT > 0) sp *= P.kind === 'jerry' ? 1.35 : 1.3;
     if (this.checkT > 0) { dir = null; }
-    const jump = k.Space && P.stun <= 0 ? S.jump : 0;
+    const jump = (k.Space || (tc && tc.jump)) && P.stun <= 0 ? S.jump : 0;
     if (P.stun > 0) { this.drive(P, null, 0, dt, 0); return; }
-    // personaj doim sichqoncha qaragan tomonga qaraydi
-    P.faceCam = true;
-    P.yaw = lerpAng(P.yaw, y, Math.min(1, dt * 25));
+    // turganda — sichqoncha qaragan tomonga qaraydi; yurganda — qayoqqa yursa o'sha tomonga buriladi
+    if (this.isFP()) { P.faceCam = true; P.yaw = lerpAng(P.yaw, y, Math.min(1, dt * 25)); }
+    else if (dir) P.faceCam = false;
+    else { P.faceCam = true; P.yaw = lerpAng(P.yaw, y, Math.min(1, dt * 8)); }
     this.drive(P, dir, sp, dt, jump);
     if (dir && P.onGround) { this.stepT -= dt * sp; if (this.stepT <= 0) { this.stepT = P.kind === 'jerry' ? 2.2 : 3.6; if (P.kind === 'tom' || P.sprinting) SND.play('step'); } }
   }
@@ -585,6 +594,8 @@ export class Match {
 
   dispose() {
     const c = gfx.renderer.domElement;
+    if (this.touch) this.touch.detach();
+    document.getElementById('hotbar').removeEventListener('pointerdown', this.h.hb);
     window.removeEventListener('keydown', this.h.kd); window.removeEventListener('keyup', this.h.ku);
     window.removeEventListener('mousemove', this.h.mm); c.removeEventListener('mousedown', this.h.md); window.removeEventListener('mouseup', this.h.mu);
     c.removeEventListener('wheel', this.h.wh); document.removeEventListener('pointerlockchange', this.h.pl); c.removeEventListener('contextmenu', this.h.cm);

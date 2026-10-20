@@ -2,6 +2,7 @@
 // Firebase sozlangan bo'lsa — Google orqali kirish + Firestore; aks holda — brauzer ichidagi offline rejim.
 import { FIREBASE_CONFIG } from './config.js';
 import { NICK_MIN, NICK_MAX } from './catalog.js';
+import { firebaseNet, localNet } from './net.js';
 
 export const ONLINE_MS = 2.5 * 60 * 1000;
 export function checkNick(n) {
@@ -36,9 +37,10 @@ export async function createBackend() {
 
 // ======================= OFFLINE (localStorage) =======================
 function localBackend() {
-  const KEY = 'tj_db_v1', SES = 'tj_session_v1';
+  const SLOT = new URLSearchParams(location.search).get('slot') || '';
+  const KEY = 'tj_db_v1', SES = 'tj_session_v1' + SLOT;
   const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
-  const db = () => { const d = read(); for (const k of ['users', 'profiles', 'pids', 'requests', 'friends']) d[k] ||= {}; return d; };
+  const db = () => { const d = read(); for (const k of ['users', 'profiles', 'pids', 'requests', 'friends', 'gifts']) d[k] ||= {}; return d; };
   const write = d => { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { } emit(); };
   const subs = new Set(); const emit = () => subs.forEach(f => f());
   window.addEventListener('storage', e => { if (e.key === KEY) emit(); });
@@ -49,9 +51,9 @@ function localBackend() {
     onAuth(cb) { authCbs.push(cb); setTimeout(() => { const uid = localStorage.getItem(SES); me = uid ? { uid, name: 'Mehmon' } : null; cb(me); }, 0); },
     async signInGoogle() { throw new Error("Google orqali kirish uchun Firebase sozlanishi kerak (O'QING.md). Hozircha mehmon sifatida kiring."); },
     async signInGuest(fresh) {
-      let uid = !fresh && localStorage.getItem('tj_lastuid');
+      let uid = !fresh && localStorage.getItem('tj_lastuid' + SLOT);
       if (!uid) uid = 'L' + Math.random().toString(36).slice(2, 10);
-      localStorage.setItem(SES, uid); localStorage.setItem('tj_lastuid', uid);
+      localStorage.setItem(SES, uid); localStorage.setItem('tj_lastuid' + SLOT, uid);
       setMe({ uid, name: 'Mehmon' });
     },
     async signOut() { localStorage.removeItem(SES); setMe(null); },
@@ -94,7 +96,15 @@ function localBackend() {
       subs.add(f); f(); return () => subs.delete(f);
     },
     async removeFriend(uid) { const d = db(); if (d.friends[me.uid]) delete d.friends[me.uid][uid]; if (d.friends[uid]) delete d.friends[uid][me.uid]; write(d); },
+    async sendGift(to, cur, n) { const d = db(); const id = 'g' + Date.now() + Math.random().toString(36).slice(2, 6); d.gifts[id] = { from: me.uid, to, cur, n, created: Date.now() }; write(d); },
+    watchGifts(cb) {
+      const f = () => { const d = db(); cb(Object.entries(d.gifts).filter(([, g]) => g.to === me.uid).map(([id, g]) => Object.assign({ id, nick: (d.profiles[g.from] || {}).nick }, g))); };
+      subs.add(f); f(); return () => subs.delete(f);
+    },
+    async claimGift(id) { const d = db(); const g = d.gifts[id]; if (!g || g.to !== me.uid) return null; delete d.gifts[id]; write(d); return g; },
   };
+  B.slot = SLOT;
+  B.makeNet = async () => localNet(me.uid);
   return B;
 }
 
@@ -104,7 +114,7 @@ async function firebaseBackend(cfg) {
   const [{ initializeApp }, AU, FS] = await Promise.all([import(U('app')), import(U('auth')), import(U('firestore'))]);
   const app = initializeApp(cfg);
   const auth = AU.getAuth(app), db = FS.getFirestore(app);
-  const { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot, serverTimestamp, runTransaction, writeBatch } = FS;
+  const { doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, onSnapshot, serverTimestamp, runTransaction, writeBatch } = FS;
   let me = null;
   const ms = t => t && t.toMillis ? t.toMillis() : (t || 0);
   const B = {
@@ -180,9 +190,22 @@ async function firebaseBackend(cfg) {
       await b.commit();
     },
   };
+  // onlayn o'yin (Realtime Database)
+  B.makeNet = async () => cfg.databaseURL ? firebaseNet(app, cfg, me.uid) : null;
+  // sovg'alar (olmos/oltin ulashish)
+  B.sendGift = async (to, cur, n) => { await addDoc(collection(db, 'gifts'), { from: me.uid, to, cur, n, created: serverTimestamp() }); };
+  B.watchGifts = cb => onSnapshot(query(collection(db, 'gifts'), where('to', '==', me.uid)), async snap => {
+    const list = await Promise.all(snap.docs.map(async d => { const g = d.data(); const p = await getDoc(doc(db, 'profiles', g.from)); return Object.assign({ id: d.id, nick: p.exists() ? p.data().nick : '???' }, g); }));
+    cb(list);
+  }, e => console.error("Sovg'alar:", fbErr(e)));
+  B.claimGift = async id => runTransaction(db, async tx => {
+    const ref = doc(db, 'gifts', id), s2 = await tx.get(ref);
+    if (!s2.exists() || s2.data().to !== me.uid) return null;
+    tx.delete(ref); return s2.data();
+  });
   // har bir amal xatosini o'zbekcha tushuntirish bilan qaytarish
   for (const k of Object.keys(B)) {
-    if (typeof B[k] !== 'function' || ['onAuth', 'watchRequests', 'watchFriends'].includes(k)) continue;
+    if (typeof B[k] !== 'function' || ['onAuth', 'watchRequests', 'watchFriends', 'watchGifts', 'makeNet'].includes(k)) continue;
     const f = B[k];
     B[k] = async (...a) => { try { return await f(...a); } catch (e) { console.error('Firebase:', k, e); throw new Error(fbErr(e)); } };
   }

@@ -87,7 +87,7 @@ ui.confirm = text => new Promise(res => {
 ui.renderTop = function () {
   const d = app.data, p = app.profile; if (!d || !p) return;
   for (const [id, k] of [['wSir', 'sir'], ['wGold', 'gold'], ['wDia', 'diamond']]) { $(id).textContent = fmt(d.wallet[k]); document.querySelectorAll('.' + id).forEach(e => e.textContent = fmt(d.wallet[k])); }
-  $('pcIcon').src = iconURL[p.icon] || iconURL.j_classic; $('pcNick').innerHTML = nickHTML(p.nick, p.color); $('pcId').textContent = p.pid;
+  $('pcIcon').src = iconURL[p.icon] || iconURL.j_classic; $('pcNick').innerHTML = nickHTML(p.nick, p.color) + (app.isAdmin ? ' <span class="admin-badge">👑 ADMIN</span>' : ''); $('pcId').textContent = p.pid;
   $('frMyId').textContent = p.pid;
   $('playAs').textContent = (d.char === 'tom' ? 'Tom' : 'Jerry') + " bo'lib";
   ui.renderCards();
@@ -114,9 +114,10 @@ ui.placeCards = function () {
 // ---------------- sotib olish ----------------
 async function pay(cur, price, what) {
   const w = app.data.wallet;
-  if (w[cur] < price) { SND.play('error'); ui.toast(`${CUR_NAME[cur]} yetarli emas! Kerak: ${price}`, true); return false; }
-  if (cur === 'diamond' || price >= 20) { if (!(await ui.confirm(`<b>${what}</b><br>${price} ${curIco(cur)} ${CUR_NAME[cur].toLowerCase()} evaziga sotib olasizmi?`))) return false; }
-  w[cur] -= price; SND.play('buy'); app.saveSoon(); ui.renderTop();
+  if (!app.isAdmin && w[cur] < price) { SND.play('error'); ui.toast(`${CUR_NAME[cur]} yetarli emas! Kerak: ${price}`, true); return false; }
+  if (!app.isAdmin && (cur === 'diamond' || price >= 20)) { if (!(await ui.confirm(`<b>${what}</b><br>${price} ${curIco(cur)} ${CUR_NAME[cur].toLowerCase()} evaziga sotib olasizmi?`))) return false; }
+  if (!app.isAdmin) w[cur] -= price;
+  SND.play('buy'); app.saveSoon(); ui.renderTop();
   return true;
 }
 const priceBtn = (cur, price, attrs = '', cls = 'gold') => `<button class="btn ${cls}" ${attrs}>${price} ${curIco(cur)}</button>`;
@@ -241,7 +242,7 @@ ui.renderFriends = function () {
   const row = (f, acts) => {
     const on = Date.now() - (f.lastSeen || 0) < ONLINE_MS, recent = Date.now() - (f.lastSeen || 0) < 86400000 * 3;
     return `<div class="frow"><img src="${iconURL[f.icon] || iconURL.j_classic}" alt=""><div class="fi"><div class="fn">${nickHTML(f.nick || '???', f.color)}</div>
-      <div class="fs"><span class="dot ${on ? 'on' : recent ? 'recent' : ''}"></span>${acts ? 'ID: ' + esc(f.pid) : ago(f.lastSeen) + ' · ID: ' + esc(f.pid)}</div></div><div class="acts">${acts || `<button class="btn small" data-rm="${f.uid}" title="O'chirish">✕</button>`}</div></div>`;
+      <div class="fs"><span class="dot ${on ? 'on' : recent ? 'recent' : ''}"></span>${acts ? 'ID: ' + esc(f.pid) : ago(f.lastSeen) + ' · ID: ' + esc(f.pid)}</div></div><div class="acts">${acts || `${on ? `<button class="btn small orange" data-inv="${f.uid}" title="O'yinga chaqirish">🎮</button>` : ''}<button class="btn small gold" data-gf="${f.uid}" title="Sovg'a">🎁</button><button class="btn small" data-rm="${f.uid}" title="O'chirish">✕</button>`}</div></div>`;
   };
   const sorted = friends.slice().sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
   const online = sorted.filter(f => Date.now() - (f.lastSeen || 0) < ONLINE_MS), recent = sorted.filter(f => !online.includes(f) && Date.now() - (f.lastSeen || 0) < 86400000 * 3), rest = sorted.filter(f => !online.includes(f) && !recent.includes(f));
@@ -251,6 +252,8 @@ ui.renderFriends = function () {
     : `<div class="empty-msg">Yangi so'rovlar yo'q.</div>`;
   document.querySelectorAll('[data-ac]').forEach(b => b.onclick = async () => { await app.backend.accept(b.dataset.ac); SND.play('buy'); ui.toast("Do'stlikka qabul qilindi!"); });
   document.querySelectorAll('[data-dc]').forEach(b => b.onclick = async () => { await app.backend.decline(b.dataset.dc); });
+  document.querySelectorAll('[data-gf]').forEach(b => b.onclick = () => ui.openGift(friends.find(f => f.uid === b.dataset.gf)));
+  document.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => app.inviteFriend ? app.inviteFriend(friends.find(f => f.uid === b.dataset.inv)) : ui.toast("Do'st bilan birga o'ynash tez orada qo'shiladi"));
   document.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { if (await ui.confirm("Do'stlar ro'yxatidan o'chirasizmi?")) await app.backend.removeFriend(b.dataset.rm); });
 };
 ui.addFriend = async function () {
@@ -298,4 +301,32 @@ ui.showResult = function (r) {
     : `<div>Ushlashlar <b>${r.catches}</b></div><div>Topilgan joylar <b>${r.finds}</b></div><div>Vaqt <b>${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}</b></div><div>Jerryning joni <b>${Math.max(0, r.lives)}</b></div>`;
   $('resSir').textContent = r.sir;
   ui.open('result');
+};
+
+// ---------------- sovg'a ----------------
+let giftCur = 'diamond', giftFriend = null;
+ui.openGift = function (f) {
+  if (!f) return;
+  giftFriend = f; ui.open('gift');
+  $('giftTo').innerHTML = nickHTML(f.nick, f.color);
+  const upd = () => {
+    document.querySelectorAll('[data-gc]').forEach(b => b.classList.toggle('on', b.dataset.gc === giftCur));
+    $('giftHave').textContent = app.isAdmin ? 'Admin: cheksiz' : `Sizda: ${fmt(app.data.wallet[giftCur])}`;
+  };
+  document.querySelectorAll('[data-gc]').forEach(b => b.onclick = () => { giftCur = b.dataset.gc; upd(); });
+  upd();
+  $('btnGift').onclick = async () => {
+    const n = Math.floor(+$('giftN').value);
+    if (!(n >= 1 && n <= 1000)) { ui.toast('1 dan 1000 gacha son yozing', true); return; }
+    const w = app.data.wallet;
+    if (!app.isAdmin && w[giftCur] < n) { ui.toast(`${CUR_NAME[giftCur]} yetarli emas`, true); SND.play('error'); return; }
+    $('btnGift').disabled = true;
+    try {
+      await app.backend.sendGift(giftFriend.uid, giftCur, n);
+      if (!app.isAdmin) w[giftCur] -= n;
+      app.saveSoon(); ui.renderTop(); SND.play('buy');
+      ui.close('gift'); ui.toast(`🎁 ${giftFriend.nick} ga ${n} ${CUR_NAME[giftCur].toLowerCase()} yuborildi!`);
+    } catch (e) { ui.toast(e.message, true); }
+    $('btnGift').disabled = false;
+  };
 };

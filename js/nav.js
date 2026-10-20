@@ -1,17 +1,18 @@
 // Yo'l topish: to'r (grid) + A* + yo'lni silliqlash. Tom va Jerry uchun alohida to'r.
-import { SX, SZ } from './house.js';
+import { SX, SZ, BOUNDS } from './house.js';
 
 export class NavGrid {
   constructor(world, r, h, cs = .5) {
-    this.cs = cs; this.nx = Math.ceil(SX / cs); this.nz = Math.ceil(SZ / cs);
+    this.cs = cs; this.ox = BOUNDS.x0; this.oz = BOUNDS.z0;
+    this.nx = Math.ceil((BOUNDS.x1 - BOUNDS.x0) / cs); this.nz = Math.ceil((BOUNDS.z1 - BOUNDS.z0) / cs);
     const N = this.nx * this.nz;
     this.block = new Uint8Array(N);
     for (const c of world.colliders) {
       if (c.minY >= h || c.maxY <= .45) continue;
-      const x0 = Math.max(0, Math.floor((c.minX - r) / cs)), x1 = Math.min(this.nx - 1, Math.floor((c.maxX + r) / cs));
-      const z0 = Math.max(0, Math.floor((c.minZ - r) / cs)), z1 = Math.min(this.nz - 1, Math.floor((c.maxZ + r) / cs));
+      const x0 = Math.max(0, Math.floor((c.minX - r - this.ox) / cs)), x1 = Math.min(this.nx - 1, Math.floor((c.maxX + r - this.ox) / cs));
+      const z0 = Math.max(0, Math.floor((c.minZ - r - this.oz) / cs)), z1 = Math.min(this.nz - 1, Math.floor((c.maxZ + r - this.oz) / cs));
       for (let j = z0; j <= z1; j++) for (let i = x0; i <= x1; i++) {
-        const x = (i + .5) * cs, z = (j + .5) * cs;
+        const x = (i + .5) * cs + this.ox, z = (j + .5) * cs + this.oz;
         const dx = Math.max(c.minX - x, 0, x - c.maxX), dz = Math.max(c.minZ - z, 0, z - c.maxZ);
         if (dx * dx + dz * dz < r * r) this.block[j * this.nx + i] = 1;
       }
@@ -23,8 +24,10 @@ export class NavGrid {
     this.heap = new Int32Array(N); this.hn = 0;
     this.extra = null;  // qo'shimcha narx (masalan Tomdan qochish)
   }
-  ci(x) { return Math.max(0, Math.min(this.nx - 1, Math.floor(x / this.cs))); }
-  cj(z) { return Math.max(0, Math.min(this.nz - 1, Math.floor(z / this.cs))); }
+  ci(x) { return Math.max(0, Math.min(this.nx - 1, Math.floor((x - this.ox) / this.cs))); }
+  cj(z) { return Math.max(0, Math.min(this.nz - 1, Math.floor((z - this.oz) / this.cs))); }
+  wx(i) { return (i + .5) * this.cs + this.ox; }
+  wz(j) { return (j + .5) * this.cs + this.oz; }
   free(x, z) { return !this.block[this.cj(z) * this.nx + this.ci(x)]; }
   nearestFree(x, z, maxR = 10) {
     const i0 = this.ci(x), j0 = this.cj(z);
@@ -34,7 +37,7 @@ export class NavGrid {
         if (Math.abs(di) !== rr && Math.abs(dj) !== rr) continue;
         const i = i0 + di, j = j0 + dj;
         if (i < 0 || j < 0 || i >= this.nx || j >= this.nz) continue;
-        if (!this.block[j * this.nx + i]) return [(i + .5) * this.cs, (j + .5) * this.cs];
+        if (!this.block[j * this.nx + i]) return [this.wx(i), this.wz(j)];
       }
     }
     return null;
@@ -44,8 +47,14 @@ export class NavGrid {
     for (let k = 1; k <= n; k++) { const t = k / n; if (!this.free(ax + dx * t, az + dz * t)) return false; }
     return true;
   }
-  randomFree(rnd = Math.random, tries = 200) {
-    for (let k = 0; k < tries; k++) { const i = 1 + Math.floor(rnd() * (this.nx - 2)), j = 1 + Math.floor(rnd() * (this.nz - 2)); if (!this.block[j * this.nx + i]) return [(i + .5) * this.cs, (j + .5) * this.cs]; }
+  // odatda uy ichidan (hovli emas) tasodifiy bo'sh joy
+  randomFree(rnd = Math.random, tries = 200, outside = false) {
+    for (let k = 0; k < tries; k++) {
+      const x = outside ? BOUNDS.x0 + rnd() * (BOUNDS.x1 - BOUNDS.x0) : 1 + rnd() * (SX - 2);
+      const z = outside ? BOUNDS.z0 + rnd() * (BOUNDS.z1 - BOUNDS.z0) : 1 + rnd() * (SZ - 2);
+      const i = this.ci(x), j = this.cj(z);
+      if (!this.block[j * this.nx + i]) return [this.wx(i), this.wz(j)];
+    }
     return null;
   }
   push(n) {
@@ -59,7 +68,7 @@ export class NavGrid {
     h[i] = last; return top;
   }
   // natija: [{x,z}, ...] yoki null
-  find(sx, sz, tx, tz, maxIter = 24000) {
+  find(sx, sz, tx, tz, maxIter = 40000) {
     const s0 = this.nearestFree(sx, sz, 3), t0 = this.nearestFree(tx, tz, 6);
     if (!s0 || !t0) return null;
     const nx = this.nx, si = this.ci(s0[0]), sj = this.cj(s0[1]), ti = this.ci(t0[0]), tj = this.cj(t0[1]);
@@ -83,7 +92,7 @@ export class NavGrid {
         if (this.block[n] || this.closed[n] === st) continue;
         if (di && dj && (this.block[cj * nx + i] || this.block[j * nx + ci])) continue;
         let cost = di && dj ? 1.4142 : 1;
-        if (ex) cost += ex((i + .5) * this.cs, (j + .5) * this.cs);
+        if (ex) cost += ex(this.wx(i), this.wz(j));
         const g = this.g[cur] + cost;
         if (this.seen[n] !== st || g < this.g[n]) {
           this.seen[n] = st; this.g[n] = g; this.f[n] = g + H(i, j); this.came[n] = cur; this.push(n);
@@ -94,7 +103,7 @@ export class NavGrid {
     const cells = [];
     for (let n = goal; n !== -1; n = this.came[n]) cells.push(n);
     cells.reverse();
-    const pts = cells.map(n => { const i = n % nx; return { x: (i + .5) * this.cs, z: ((n - i) / nx + .5) * this.cs }; });
+    const pts = cells.map(n => { const i = n % nx; return { x: this.wx(i), z: this.wz((n - i) / nx) }; });
     pts[pts.length - 1] = { x: t0[0], z: t0[1] };
     // silliqlash
     const out = [pts[0]];

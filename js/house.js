@@ -9,6 +9,8 @@ import { gfx } from './gfx.js';
 export const ROOM = 26, WALL = 1, WH = 14, COLS = 4, ROWS = 3;
 export const SX = COLS * (ROOM + WALL) + WALL, SZ = ROWS * (ROOM + WALL) + WALL;
 export const DOOR_W = 6.5, DOOR_H = 10, HOLE_W = 1.7, HOLE_H = 1.9;
+export const YARD = 28;   // uy atrofidagi hovli (to'siq bilan o'ralgan)
+export const BOUNDS = { x0: -YARD, z0: -YARD, x1: SX + YARD, z1: SZ + YARD };
 export const origin = (c, r) => [WALL + c * (ROOM + WALL), WALL + r * (ROOM + WALL)];
 
 export const GRID = [['bedroom', 'kids', 'bath', 'laundry'], ['library', 'living', 'dining', 'kitchen'], ['garden', 'entry', 'study', 'storage']];
@@ -33,7 +35,7 @@ export const STYLE = {
 const WIN = {
   'bedroom:N': [13], 'bedroom:W': [], 'kids:N': [13], 'bath:N': [{ c: 13, sill: 5.6, h: 5 }], 'laundry:N': [], 'laundry:E': [13],
   'library:W': [], 'kitchen:E': [{ c: 13, sill: 6.4, h: 5 }], 'garden:W': [6.5, 19.5], 'garden:S': [6.5, 19.5],
-  'entry:S': [], 'study:S': [{ c: 13, sill: 5.2 }], 'storage:S': [{ c: 13, sill: 7.6, h: 3.6, w: 6 }], 'storage:E': [{ c: 13, sill: 7.6, h: 3.6, w: 6 }],
+  'entry:S': [{ c: 13, door: true }], 'study:S': [{ c: 13, sill: 5.2 }], 'storage:S': [{ c: 13, sill: 7.6, h: 3.6, w: 6 }], 'storage:E': [{ c: 13, sill: 7.6, h: 3.6, w: 6 }],
 };
 
 const roomIndex = (c, r) => r * COLS + c;
@@ -222,9 +224,25 @@ function buildOutside(scene) {
   B.room = 99;
   const F = frame(0, 0, 0);
   F.box(10, .1, 50, M.tex('path', TX.stone('#c8bba5', '#a89a80'), { roughness: .9 }), origin(1, 2)[0] + 13, 0, SZ + 25, { cast: false });
-  for (let x = -40; x < SX + 40; x += 5) { F.box(.4, 3.2, .4, M.paint('#ffffff', .6), x, 0, -40, { cast: false }); F.box(.4, 3.2, .4, M.paint('#ffffff', .6), x, 0, SZ + 40, { cast: false }); }
-  F.box(SX + 80, .3, .2, M.paint('#ffffff', .6), SX / 2, 2.4, -40, { cast: false }); F.box(SX + 80, .3, .2, M.paint('#ffffff', .6), SX / 2, 2.4, SZ + 40, { cast: false });
-  for (let i = 0; i < 30; i++) { const x = r() * (SX + 30) - 15, z = r() < .5 ? -4 - r() * 6 : SZ + 4 + r() * 6; F.sph(1.6 + r() * 1.4, M.leaf(['#2e7d32', '#43a047'][i % 2]), x, 1, z, 1, .8, 1, { cast: false }); }
+  // hovli to'sig'i (undan o'tib bo'lmaydi)
+  const { x0: X0, z0: Z0, x1: X1, z1: Z1 } = BOUNDS, fm = M.paint('#ffffff', .6);
+  for (let x = X0; x <= X1; x += 4) { F.box(.4, 3.4, .4, fm, x, 0, Z0, { cast: false }); F.box(.4, 3.4, .4, fm, x, 0, Z1, { cast: false }); }
+  for (let z = Z0; z <= Z1; z += 4) { F.box(.4, 3.4, .4, fm, X0, 0, z, { cast: false }); F.box(.4, 3.4, .4, fm, X1, 0, z, { cast: false }); }
+  for (const y of [1.2, 2.6]) {
+    F.box(X1 - X0, .3, .2, fm, (X0 + X1) / 2, y, Z0, { cast: false }); F.box(X1 - X0, .3, .2, fm, (X0 + X1) / 2, y, Z1, { cast: false });
+    F.box(.2, .3, Z1 - Z0, fm, X0, y, (Z0 + Z1) / 2, { cast: false }); F.box(.2, .3, Z1 - Z0, fm, X1, y, (Z0 + Z1) / 2, { cast: false });
+  }
+  addCol(X0 - 1, 0, Z0 - 1, X1 + 1, 6, Z0 + .3); addCol(X0 - 1, 0, Z1 - .3, X1 + 1, 6, Z1 + 1);
+  addCol(X0 - 1, 0, Z0, X0 + .3, 6, Z1); addCol(X1 - .3, 0, Z0, X1 + 1, 6, Z1);
+  // butalar va gullar (to'siqqa yaqin)
+  for (let i = 0; i < 40; i++) {
+    const side = i % 4, t = r();
+    const x = side < 2 ? BOUNDS.x0 + 3 + t * (BOUNDS.x1 - BOUNDS.x0 - 6) : (side === 2 ? BOUNDS.x0 + 2.5 : BOUNDS.x1 - 2.5);
+    const z = side >= 2 ? BOUNDS.z0 + 3 + t * (BOUNDS.z1 - BOUNDS.z0 - 6) : (side === 0 ? BOUNDS.z0 + 2.5 : BOUNDS.z1 - 2.5);
+    const s2 = 1.4 + r() * 1.2;
+    F.sph(s2, M.leaf(['#2e7d32', '#43a047', '#388e3c'][i % 3]), x, s2 * .7, z, 1, .8, 1, { cast: false });
+    addCol(x - s2 * .8, 0, z - s2 * .8, x + s2 * .8, s2 * 1.4, z + s2 * .8, 'bush');
+  }
   // tom
   F.box(SX + 4, .6, SZ + 4, extMat(), SX / 2, WH, SZ / 2, { receive: false });
   const roofMat = M.paint('#9a3b2a', .8);
@@ -262,6 +280,7 @@ export function buildHouse(scene) {
       const room = L || Rr, side = L ? 'E' : 'W';
       for (const wdef of WIN[room.key + ':' + side] ?? [13]) {
         const w = typeof wdef === 'number' ? { c: wdef } : wdef;
+        if (w.door) { ops.push({ type: 'door', c: z0 + w.c, w: DOOR_W, y0: 0, y1: DOOR_H }); continue; }
         ops.push({ type: 'window', c: z0 + w.c, w: w.w || 8, y0: w.sill || 4.2, y1: (w.sill || 4.2) + (w.h || 6.8), sunlit: side === 'W' });
       }
     }
@@ -281,6 +300,7 @@ export function buildHouse(scene) {
       const room = T || Bt, side = T ? 'S' : 'N';
       for (const wdef of WIN[room.key + ':' + side] ?? [13]) {
         const w = typeof wdef === 'number' ? { c: wdef } : wdef;
+        if (w.door) { ops.push({ type: 'door', c: x0 + w.c, w: DOOR_W, y0: 0, y1: DOOR_H }); continue; }
         ops.push({ type: 'window', c: x0 + w.c, w: w.w || 8, y0: w.sill || 4.2, y1: (w.sill || 4.2) + (w.h || 6.8), sunlit: side === 'S' });
       }
     }
@@ -325,11 +345,12 @@ export function buildHouse(scene) {
 const CELL = 4;
 function makeWorld() {
   const cols = B.colliders;
-  const nx = Math.ceil((SX + 2) / CELL), nz = Math.ceil((SZ + 2) / CELL);
+  const OX = BOUNDS.x0 - 2, OZ = BOUNDS.z0 - 2;
+  const nx = Math.ceil((BOUNDS.x1 - OX + 2) / CELL), nz = Math.ceil((BOUNDS.z1 - OZ + 2) / CELL);
   const cells = Array.from({ length: nx * nz }, () => []);
   cols.forEach((b, i) => {
-    const x0 = Math.max(0, Math.floor(b.minX / CELL)), x1 = Math.min(nx - 1, Math.floor(b.maxX / CELL));
-    const z0 = Math.max(0, Math.floor(b.minZ / CELL)), z1 = Math.min(nz - 1, Math.floor(b.maxZ / CELL));
+    const x0 = Math.max(0, Math.floor((b.minX - OX) / CELL)), x1 = Math.min(nx - 1, Math.floor((b.maxX - OX) / CELL));
+    const z0 = Math.max(0, Math.floor((b.minZ - OZ) / CELL)), z1 = Math.min(nz - 1, Math.floor((b.maxZ - OZ) / CELL));
     for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) cells[z * nx + x].push(i);
   });
   let stamp = 1;
@@ -339,8 +360,8 @@ function makeWorld() {
     colliders: cols, tops: B.tops, hides: B.hides, rooms: ROOMS, anim: B.anim, size: [SX, SZ],
     query(minX, minZ, maxX, maxZ) {
       out.length = 0; stamp++;
-      const x0 = Math.max(0, Math.floor(minX / CELL)), x1 = Math.min(nx - 1, Math.floor(maxX / CELL));
-      const z0 = Math.max(0, Math.floor(minZ / CELL)), z1 = Math.min(nz - 1, Math.floor(maxZ / CELL));
+      const x0 = Math.max(0, Math.floor((minX - OX) / CELL)), x1 = Math.min(nx - 1, Math.floor((maxX - OX) / CELL));
+      const z0 = Math.max(0, Math.floor((minZ - OZ) / CELL)), z1 = Math.min(nz - 1, Math.floor((maxZ - OZ) / CELL));
       for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) for (const i of cells[z * nx + x]) if (marks[i] !== stamp) { marks[i] = stamp; out.push(cols[i]); }
       return out;
     },

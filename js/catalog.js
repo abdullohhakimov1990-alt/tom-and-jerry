@@ -5,6 +5,9 @@ export const CHAR_PRICE = { tom: 3, jerry: 2 };          // personaj almashtiris
 export const START_WALLET = { sir: 200, gold: 5, diamond: 0 };
 export const CUR_NAME = { sir: 'Sir', gold: 'Oltin', diamond: 'Olmos' };
 export const NICK_MIN = 3, NICK_MAX = 15;
+// Admin akkauntlar (Google pochtasi): hamma narsa ochiq, olmos va oltin kamaymaydi
+export const ADMINS = ['abdullohhakimov1990@gmail.com'];
+export const ADMIN_WALLET = { gold: 1000, diamond: 100 };
 
 // ---------------- SKIN TO'PLAMLARI ----------------
 // Har bir to'plamda Tom va Jerry uchun bir xil mavzudagi skin bor.

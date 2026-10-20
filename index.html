@@ -161,10 +161,23 @@
   <div id="hGuide"></div>
   <div id="hideBar"><div class="lbl">Yashiringansan</div><div class="bar"><i></i></div></div>
   <div class="hud-bottom"><div id="hPrompt"></div><div id="hStam" class="stam"><i></i></div><div id="hotbar"></div></div>
+  <!-- telefon boshqaruvi -->
+  <div id="touch" class="hidden">
+    <div id="lookPad"></div>
+    <div id="joy"><div id="joyKnob"></div></div>
+    <button id="tJump" class="tbtn big" aria-label="Sakrash">⤒<small>Sakrash</small></button>
+    <button id="tHide" class="tbtn" aria-label="Yashirinish">👁<small>Yashirin</small></button>
+    <button id="tAct" class="tbtn hidden" aria-label="Tashlanish">🐾<small>Tashlan</small></button>
+    <button id="tSprint" class="tbtn small" aria-label="Yugurish">🏃</button>
+    <button id="tMap" class="tbtn small" aria-label="Xarita">🗺</button>
+    <button id="tPause" class="tbtn small" aria-label="Pauza">II</button>
+  </div>
+  <div id="oppTag" class="hidden"></div>
   <div id="crosshair" class="hidden"></div>
   <div id="lockHint" class="hidden">Boshqarish uchun ekranni bosing 🖱️</div>
 </div>
 <div id="countdown" class="hidden"></div>
+<div id="rotate"><div class="rot-ic">📱</div><div>Telefonni <b>yotqizing</b> (gorizontal)</div><small>O'yin faqat yotiq ekranda ishlaydi</small></div>
 
 <!-- ============ PAUZA / NATIJA ============ -->
 <div id="pause" class="modal hidden"><div class="mbox center">
@@ -180,6 +193,28 @@
   <div class="row"><button id="btnAgain" class="btn orange big">Yana o'ynash</button><button id="btnToMenu" class="btn blue">Menyu</button></div>
 </div></div>
 
+<div id="gift" class="modal hidden"><div class="mbox center">
+  <button class="x" data-close="gift">✕</button>
+  <h2>🎁 Sovg'a yuborish</h2>
+  <div id="giftTo" class="nick"></div>
+  <div class="row"><button class="tab on" data-gc="diamond"><span class="cur diamond"></span> Olmos</button><button class="tab" data-gc="gold"><span class="cur gold"></span> Oltin</button></div>
+  <div class="nickrow"><input id="giftN" type="number" min="1" max="1000" value="5"></div>
+  <div class="sub" id="giftHave"></div>
+  <button id="btnGift" class="btn orange big">Yuborish</button>
+</div></div>
+<div id="invite" class="modal hidden"><div class="mbox center">
+  <h2>🎮 Taklif!</h2>
+  <img id="invIcon" class="inv-ic" alt="">
+  <div><b id="invNick" class="nick"></b> sizni birga o'ynashga chaqiryapti</div>
+  <div class="sub">Kim Tom, kim Jerry bo'lishini o'yin o'zi tasodifiy tanlaydi</div>
+  <div class="row"><button id="btnInvYes" class="btn green big">Qo'shilish</button><button id="btnInvNo" class="btn red">Rad etish</button></div>
+</div></div>
+<div id="waiting" class="modal hidden"><div class="mbox center">
+  <h2>Kutilmoqda...</h2>
+  <div class="spinner"></div>
+  <div><b id="waitNick" class="nick"></b> taklifni qabul qilishini kutyapmiz</div>
+  <button id="btnWaitCancel" class="btn red">Bekor qilish</button>
+</div></div>
 <div id="gToast"></div>
 <div id="confirm" class="modal hidden"><div class="mbox center"><div id="cfText"></div><div class="row"><button id="cfYes" class="btn orange">Ha</button><button id="cfNo" class="btn">Yo'q</button></div></div></div>
 

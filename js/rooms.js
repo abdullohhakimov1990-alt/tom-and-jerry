@@ -103,13 +103,13 @@ export const DESIGNS = {
     hide(R, 'pot', 4, 12.6, 1); hide(R, 'pot', 21.6, 17.4, 3); hide(R, 'vase', 8.6, 3.6, 0); mouseS(R, 13);
   },
   entry(R) {
-    // kirish eshigi (yopiq)
-    const D = R.f(13, 25.9, 2);
-    D.box(7.4, 11, .3, M.wood('#5a3520', .4), 0, 0, -.05);
-    D.box(6.4, 10, .3, M.wood('#7a4a26', .35), 0, 0, -.2);
-    for (const [x, y] of [[-1.5, 1.2], [1.5, 1.2], [-1.5, 5.4], [1.5, 5.4]]) D.box(2.3, 3.4, .12, M.wood('#8a5a33', .35), x, y, -.38);
-    D.sph(.3, M.metal('#d4af37', .2), 2.4, 5, -.5);
-    D.box(3, .05, 1.5, M.fab('#6d4c41'), 0, 0, -1.4, { cast: false });
+    // kirish eshigi (ochiq — hovliga chiqib-kirish mumkin)
+    const D = R.f(9.9, 22.6, 1);
+    D.box(6.4, 10, .3, M.wood('#7a4a26', .35), 0, 0, 0);
+    for (const [x, y] of [[-1.5, 1.2], [1.5, 1.2], [-1.5, 5.4], [1.5, 5.4]]) D.box(2.3, 3.4, .1, M.wood('#8a5a33', .35), x, y, .18);
+    D.sph(.3, M.metal('#d4af37', .2), 2.4, 5, .35);
+    D.col(6.4, 10, .4, 0, 0, 0);
+    R.f(13, 28.2, 0).box(5, .05, 2.2, M.fab('#6d4c41'), 0, 0, 0, { cast: false });
     FN.rug(R.f(13, 13.5), 6, 21, TX.carpet('#8e2b2b', '#e0c27a', '#3b1010'));
     FN.grandfatherClock(R.f(2, 2, 0));
     FN.bench(R.f(23, 2, 0));

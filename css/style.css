@@ -315,3 +315,59 @@ kbd { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 6px
   .slot { width: 44px; height: 44px; }
   .friends-btn { width: 72px; font-size: 12px; }
 }
+
+/* ---------------- telefon ---------------- */
+#rotate { display: none; position: fixed; inset: 0; z-index: 200; background: #120818; color: #fff; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 22px; text-align: center; padding: 20px; }
+#rotate .rot-ic { font-size: 70px; animation: rot 1.6s infinite ease-in-out; }
+#rotate small { color: var(--muted); font-size: 15px; }
+@keyframes rot { 0%,30% { transform: rotate(0); } 60%,100% { transform: rotate(-90deg); } }
+@media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+#touch { position: absolute; inset: 0; pointer-events: none; }
+#touch > * { pointer-events: auto; touch-action: none; }
+#lookPad { position: absolute; left: 40%; right: 0; top: 0; bottom: 0; }
+#joy { position: absolute; left: 4vw; bottom: 6vh; width: 150px; height: 150px; border-radius: 50%; background: rgba(255,255,255,.12); border: 3px solid rgba(255,255,255,.5); }
+#joyKnob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px; border-radius: 50%; background: rgba(255,255,255,.75); box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+#joy.sprint #joyKnob { background: #ffb03a; }
+.tbtn { position: absolute; width: 74px; height: 74px; border-radius: 50%; border: 3px solid rgba(255,255,255,.85); background: rgba(20,12,30,.55); color: #fff; font-size: 28px; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; backdrop-filter: blur(4px); }
+.tbtn small { font-size: 10px; margin-top: 3px; }
+.tbtn:active, .tbtn.on { background: rgba(255,176,58,.75); }
+.tbtn.big { width: 92px; height: 92px; font-size: 36px; }
+.tbtn.small { width: 50px; height: 50px; font-size: 20px; }
+#tJump { right: 4vw; bottom: 8vh; }
+#tHide { right: calc(4vw + 104px); bottom: 5vh; }
+#tAct { right: calc(4vw + 20px); bottom: calc(8vh + 104px); }
+#tSprint { left: calc(4vw + 160px); bottom: 6vh; }
+#tMap { right: 230px; top: 12px; }
+#tPause { right: 230px; top: 70px; }
+body.touch .slot { pointer-events: auto; }
+body.touch #hotbar { pointer-events: auto; }
+body.touch .hud-bottom { bottom: 4px; }
+body.touch #hPrompt, body.touch .maphint, body.touch #lockHint { display: none !important; }
+body.touch .stam { width: 180px; }
+@media (max-height: 520px) {
+  .logo-top { font-size: 44px; } .logo-sub { font-size: 16px; letter-spacing: 6px; }
+  .screen { gap: 10px; padding: 10px; }
+  .card-box { padding: 14px; gap: 8px; }
+  .menu-logo { top: 6px; } .logo-top.sm { font-size: 30px; } .logo-sub.sm { font-size: 12px; }
+  .topbar { padding: 8px 10px; } .chip-profile img { width: 40px; height: 40px; } .nick { font-size: 15px; }
+  .cur-chip { min-width: 64px; font-size: 14px; padding: 2px 4px 2px 6px; } .cur { width: 18px; height: 18px; } .icon-btn { width: 36px; height: 36px; font-size: 18px; }
+  .friends-btn { width: 68px; padding: 8px 4px; font-size: 11px; } .friends-btn .fb-ic { font-size: 24px; }
+  .menu-right { width: 170px; bottom: 10px; right: 10px; gap: 6px; } .menu-right .btn { font-size: 14px; padding: 6px 10px; }
+  .btn.play { font-size: 24px; padding: 6px 10px; } .btn.big { font-size: 18px; padding: 10px 24px; }
+  .ccard { min-width: 110px; padding: 4px 8px 6px; } .ccard h4 { font-size: 17px; } .ccard .st { font-size: 11px; }
+  .mbox { padding: 14px; gap: 8px; } .mbox h2 { font-size: 22px; }
+  .panel { padding: 8px 10px; } .pn-head h2 { font-size: 22px; } .shop-tabs .tab { font-size: 12px; padding: 5px 8px; }
+  #eyeBox { width: 92px; padding: 3px; } #eyeBox .eye { height: 40px; } #eyeLabel { font-size: 10px; }
+  #minimap { width: 130px; height: 130px; } #mapRoom { font-size: 12px; }
+  #tMap, #tPause { right: 150px; }
+  #hTimer { font-size: 24px; } .hud-top { padding: 2px 10px; gap: 10px; }
+  #hToast { font-size: 26px; } .slot { width: 44px; height: 44px; } .slot .ic { width: 26px; height: 26px; font-size: 14px; }
+  #countdown { font-size: 90px; }
+}
+
+.admin-badge { font-size: 11px; font-weight: 800; background: linear-gradient(90deg, #ffd23f, #ff8a00); color: #3a2400; padding: 1px 7px; border-radius: 8px; vertical-align: middle; -webkit-text-fill-color: #3a2400; }
+
+.inv-ic { width: 90px; height: 90px; border-radius: 16px; }
+.spinner { width: 54px; height: 54px; border-radius: 50%; border: 6px solid rgba(255,255,255,.2); border-top-color: var(--gold); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#oppTag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 15px; background: rgba(15,8,25,.65); padding: 1px 10px; border-radius: 10px; white-space: nowrap; pointer-events: none; }

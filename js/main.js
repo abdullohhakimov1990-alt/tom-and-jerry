@@ -8,11 +8,13 @@ import { createBackend } from './backend.js';
 import { makeStage } from './stage.js';
 import { ui } from './ui.js';
 import { Match } from './match.js';
-import { START_WALLET, CHAR_PRICE } from './catalog.js';
+import { START_WALLET, CHAR_PRICE, ADMINS, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS } from './catalog.js';
 import * as SND from './audio.js';
+import { isTouch, goLandscape } from './touch.js';
 
 const $ = id => document.getElementById(id);
-const app = window.app = { match: null, data: null, profile: null, shakeAmt: 0 };
+const app = window.app = { match: null, data: null, profile: null, shakeAmt: 0, isTouch: isTouch() };
+if (app.isTouch) document.body.classList.add('touch');
 
 // ---------------- sozlamalar (shu qurilmada) ----------------
 function loadSettings() {
@@ -41,8 +43,19 @@ function mergeData(d) {
   d.equip.skin = Object.assign({}, def.equip.skin, d.equip.skin);
   return d;
 }
+// admin: hamma narsa ochiq, olmos/oltin va buyumlar tugamaydi
+function applyAdmin(d) {
+  if (!app.isAdmin || !d) return;
+  for (const st of SETS) { d.owned.skins['jerry:' + st.id] = 1; d.owned.skins['tom:' + st.id] = 1; }
+  for (const i of ICONS) d.owned.icons[i.id] = 1;
+  for (const c of COLORS) d.owned.colors[c.id] = 1;
+  for (const m of MUSIC) d.owned.music[m.id] = 1;
+  for (const it of ITEMS) d.inv[it.id] = Math.max(99, d.inv[it.id] || 0);
+  d.wallet.gold = Math.max(ADMIN_WALLET.gold, d.wallet.gold); d.wallet.diamond = Math.max(ADMIN_WALLET.diamond, d.wallet.diamond);
+}
+app.applyAdmin = () => applyAdmin(app.data);
 let saveTimer = null;
-app.saveSoon = () => { clearTimeout(saveTimer); saveTimer = setTimeout(app.saveNow, 1200); ui.renderTop && app.profile && ui.renderTop(); };
+app.saveSoon = () => { applyAdmin(app.data); clearTimeout(saveTimer); saveTimer = setTimeout(app.saveNow, 1200); ui.renderTop && app.profile && ui.renderTop(); };
 app.saveNow = async () => {
   if (!app.data || !app.user) return;
   try { localStorage.setItem('tj_data_' + app.user.uid, JSON.stringify(app.data)); } catch (e) { }
@@ -114,14 +127,31 @@ function enterMenu(acc) {
   app.profile = acc.profile;
   let local = null; try { local = JSON.parse(localStorage.getItem('tj_data_' + app.user.uid)); } catch (e) { }
   app.data = mergeData(acc.data || local);
+  app.isAdmin = ADMINS.includes(String(app.user.email || '').toLowerCase());
+  applyAdmin(app.data);
   if (!acc.data) app.saveNow();
   app.profile.icon = app.profile.icon || app.data.equip.icon; app.profile.color = app.profile.color || app.data.equip.color;
   app.stage.set('jerry', app.data.equip.skin.jerry); app.stage.set('tom', app.data.equip.skin.tom);
   ui.screen('menu'); ui.renderTop();
-  app.unsubs = [app.backend.watchFriends(f => ui.setFriends(f, null)), app.backend.watchRequests(r => ui.setFriends(null, r))];
+  app.unsubs = [app.backend.watchFriends(f => ui.setFriends(f, null)), app.backend.watchRequests(r => ui.setFriends(null, r)), app.backend.watchGifts(onGifts)];
   app.backend.heartbeat();
   clearInterval(app.hb); app.hb = setInterval(() => app.backend.heartbeat(), 60000);
   SND.playMusic(app.data.equip.music);
+}
+// kelgan sovg'alarni olish
+const claiming = new Set();
+async function onGifts(list) {
+  for (const g of list) {
+    if (claiming.has(g.id)) continue;
+    claiming.add(g.id);
+    try {
+      const got = await app.backend.claimGift(g.id);
+      if (got && (got.cur === 'gold' || got.cur === 'diamond') && got.n > 0) {
+        app.data.wallet[got.cur] += Math.min(1000, got.n); app.saveSoon(); ui.renderTop();
+        SND.play('buy'); ui.toast(`🎁 ${g.nick || "Do'stingiz"} sizga ${got.n} ${got.cur === 'gold' ? 'oltin' : 'olmos'} yubordi!`);
+      }
+    } catch (e) { console.warn(e); claiming.delete(g.id); }
+  }
 }
 app.logout = async () => { await app.saveNow(); ui.close('settings'); clearInterval(app.hb); await app.backend.signOut(); };
 
@@ -129,7 +159,8 @@ app.logout = async () => { await app.saveNow(); ui.close('settings'); clearInter
 app.selectChar = async kind => {
   const d = app.data;
   if (d.char === kind) return;
-  const price = CHAR_PRICE[kind], name = kind === 'tom' ? 'Tom' : 'Jerry';
+  const price = app.isAdmin ? 0 : CHAR_PRICE[kind], name = kind === 'tom' ? 'Tom' : 'Jerry';
+  if (app.isAdmin) { d.char = kind; SND.play('buy'); app.stage.celebrate(); app.saveSoon(); ui.renderTop(); return; }
   if (d.wallet.gold < price) { SND.play('error'); ui.toast(`${name}ni tanlash uchun ${price} oltin kerak (sizda ${d.wallet.gold})`, true); return; }
   if (!(await ui.confirm(`<b>${name}</b>ni tanlaysizmi?<br>Narxi: ${price} <span class="cur gold"></span> oltin`))) return;
   d.wallet.gold -= price; d.char = kind; SND.play('buy'); app.stage.celebrate(); app.saveSoon(); ui.renderTop();
@@ -138,6 +169,7 @@ app.selectChar = async kind => {
 // ---------------- o'yin ----------------
 app.startMatch = () => {
   if (app.match) return;
+  goLandscape();
   SND.initAudio(); SND.setVolumes(app.settings.vol, app.settings.musVol, true); SND.stopMusic();
   ui.close('shop'); ui.close('friends'); ui.close('result');
   $('menu').classList.add('hidden');
