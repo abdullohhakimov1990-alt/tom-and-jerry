@@ -16,9 +16,12 @@ export const FIREBASE_CONFIG = {
 };
 
 // ============================================================
-//  DONAT TO'LOVLARI (karta orqali)
-//  To'lov tizimida (Stripe Payment Links, Payme, Click) har bir to'plam uchun havola
-//  yaratiladi va shu yerga yoziladi. Bo'sh bo'lsa, tugma "to'lov ulanmagan" deydi.
-//  Masalan: links: { d30: 'https://buy.stripe.com/xxxx', g200: '...' }
+//  DONAT TO'LOVLARI (Uzcard / Humo / Visa karta — Payme va Click orqali)
+//  Kabinetdan olingan ID'larni shu yerga yozing (bular maxfiy emas).
+//  Maxfiy kalitlar (PAYME_KEY, CLICK_SECRET) faqat serverda — O'QING.md ga qarang.
+//  Bo'sh qolsa, donat tugmasi "to'lov ulanmagan" deydi.
 // ============================================================
-export const PAYMENT = { provider: null, links: {} };
+export const PAYMENT = {
+  payme: { merchantId: '', test: false },   // Payme Business -> Kassa -> ID (test: true = sinov kassasi)
+  click: { serviceId: '', merchantId: '' }, // Click Merchant -> Servis -> service_id va merchant_id
+};

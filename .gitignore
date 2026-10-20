@@ -1,3 +1,6 @@
 .claude/
 __pycache__/
 *.pyc
+node_modules/
+firebase-debug.log
+.secret.local

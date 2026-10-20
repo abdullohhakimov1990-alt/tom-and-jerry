@@ -56,3 +56,65 @@ Boshqa odamlar ham o'ynashi uchun o'yinni internetga joylash kerak (masalan **Fi
 - `js/ai.js` — Tom va Jerryning sun'iy intellekti
 - `js/match.js` — o'yin qoidalari va boshqaruv
 - `js/backend.js`, `js/config.js` — akkaunt va do'stlar
+- `functions/` — to'lov serveri (Payme va Click), `firebase.json` — Firebase sozlamasi
+
+## Donat: karta orqali to'lov (Payme / Click)
+
+To'lov shunday ishlaydi:
+
+1. O'yinchi Donat bo'limida to'plamni bosadi. O'yin buyurtma (`orders`) yaratib, Payme yoki Click sahifasini ochadi.
+2. O'yinchi u yerda kartasini (Uzcard, Humo, Visa) kiritib to'laydi.
+3. Payme yoki Click bizning serverga (`functions/`) xabar beradi. Server summani tekshiradi va o'yinchiga olmos yoki oltinni "sovg'a" qilib yuboradi.
+4. O'yin uni darhol oladi: "💳 To'lov qabul qilindi". Bitta to'lov ikki marta tushmaydi.
+
+Narxlar so'mda `js/catalog.js` (DONATE) va `functions/packs.js` da yozilgan. Ikkalasi bir xil bo'lishi shart.
+
+### 1-qadam: Firebase'da Blaze tarifini yoqish
+
+Server (Cloud Functions) faqat Blaze tarifida ishlaydi. Har oy katta bepul limit bor, kichik o'yin uchun odatda bir necha sent chiqadi.
+Firebase Console → chap pastda **Upgrade** → **Blaze** → karta qo'shish. Xavfsizlik uchun byudjet ogohlantirishini (masalan, $5) qo'ying.
+
+### 2-qadam: serverni joylash (bir marta)
+
+Kompyuterda (Node.js o'rnatilgan) loyiha papkasida:
+
+```
+npm install -g firebase-tools
+firebase login
+cd functions && npm install && cd ..
+firebase functions:secrets:set PAYME_KEY
+firebase functions:secrets:set CLICK_SECRET
+firebase deploy --only functions
+```
+
+- `PAYME_KEY` — Payme kabinetidagi kalit (sinov uchun avval test kaliti).
+- `CLICK_SECRET` — Click kabinetidagi SECRET_KEY.
+- Faqat bitta tizimni ulasangiz, faqat o'shaning kalitini kiriting va faqat o'shani joylang: `firebase deploy --only functions:payme` yoki `functions:click`.
+
+Joylangach, quyidagi manzillar chiqadi:
+
+- Payme: `https://europe-west1-tom-and-jerry-katta-uy.cloudfunctions.net/payme`
+- Click: `https://europe-west1-tom-and-jerry-katta-uy.cloudfunctions.net/click`
+
+### 3-qadam: Payme Business kabineti (business.payme.uz)
+
+- Kassa yarating. Turi: "Internet-do'kon / Merchant API".
+- **Endpoint URL**: yuqoridagi `.../payme` manzili.
+- **Hisob (account) maydoni**: `order_id`.
+- Kassa **ID** sini `js/config.js` → `PAYMENT.payme.merchantId` ga yozing.
+- Sinov paytida `test: true` qiling va test.paycom.uz da sinov tranzaksiyalarini o'tkazing. Hammasi yashil bo'lgach, asosiy kalitni `PAYME_KEY` ga qo'yib, `test: false` qiling.
+
+### 4-qadam: Click Merchant kabineti (merchant.click.uz)
+
+- Servis sozlamalari:
+  - **Prepare URL** va **Complete URL**: ikkalasiga ham `.../click` manzili.
+  - `service_id` va `merchant_id` ni `js/config.js` → `PAYMENT.click` ga yozing.
+- Ixtiyoriy: `functions/.env` fayliga `CLICK_SERVICE_ID=...` yozsangiz, server boshqa servis so'rovlarini rad etadi.
+
+### Sinov
+
+```
+cd functions && node test.js
+```
+
+Bu buyruq to'lov mantig'ini xotirada sinaydi: summa xatosi, takror so'rov, bekor qilish va 12 soatlik muddat.

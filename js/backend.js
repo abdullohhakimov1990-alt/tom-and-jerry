@@ -1,7 +1,7 @@
 // Akkaunt, profil, saqlash va do'stlar tizimi.
 // Firebase sozlangan bo'lsa — Google orqali kirish + Firestore; aks holda — brauzer ichidagi offline rejim.
 import { FIREBASE_CONFIG } from './config.js';
-import { NICK_MIN, NICK_MAX, SUPER_ADMINS } from './catalog.js';
+import { NICK_MIN, NICK_MAX, SUPER_ADMINS, DONATE } from './catalog.js';
 import { firebaseNet, localNet } from './net.js';
 
 export const ONLINE_MS = 2.5 * 60 * 1000;
@@ -214,8 +214,14 @@ async function firebaseBackend(cfg) {
   B.makeNet = async () => cfg.databaseURL ? firebaseNet(app, cfg, me.uid) : null;
   // sovg'alar (olmos/oltin ulashish)
   B.sendGift = async (to, cur, n) => { await addDoc(collection(db, 'gifts'), { from: me.uid, to, cur, n, created: serverTimestamp() }); };
+  // donat buyurtmasi: server to'lovni shu buyurtma bo'yicha tekshiradi va olmos/oltinni sovg'a qilib yuboradi
+  B.createOrder = async (pack, provider) => {
+    const pk = DONATE.find(p => p.id === pack); if (!pk) throw new Error("To'plam topilmadi");
+    const ref = await addDoc(collection(db, 'orders'), { uid: me.uid, pack, provider, amount: pk.uzs * 100, status: 'new', created: serverTimestamp() });
+    return { id: ref.id, uzs: pk.uzs };
+  };
   B.watchGifts = cb => onSnapshot(query(collection(db, 'gifts'), where('to', '==', me.uid)), async snap => {
-    const list = await Promise.all(snap.docs.map(async d => { const g = d.data(); const p = await getDoc(doc(db, 'profiles', g.from)); return Object.assign({ id: d.id, nick: p.exists() ? p.data().nick : '???' }, g); }));
+    const list = await Promise.all(snap.docs.map(async d => { const g = d.data(); if (g.from === 'shop') return Object.assign({ id: d.id }, g); const p = await getDoc(doc(db, 'profiles', g.from)); return Object.assign({ id: d.id, nick: p.exists() ? p.data().nick : '???' }, g); }));
     cb(list);
   }, e => console.error("Sovg'alar:", fbErr(e)));
   B.claimGift = async id => runTransaction(db, async tx => {

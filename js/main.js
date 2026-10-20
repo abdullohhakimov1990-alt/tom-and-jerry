@@ -9,7 +9,7 @@ import { makeStage } from './stage.js';
 import { ui } from './ui.js';
 import { Match } from './match.js';
 import { initOnline } from './online.js';
-import { START_WALLET, CHAR_PRICE, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS } from './catalog.js';
+import { START_WALLET, CHAR_PRICE, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS, GIFT_MAX } from './catalog.js';
 import * as SND from './audio.js';
 import { isTouch, goLandscape } from './touch.js';
 
@@ -153,8 +153,11 @@ async function onGifts(list) {
     try {
       const got = await app.backend.claimGift(g.id);
       if (got && (got.cur === 'gold' || got.cur === 'diamond') && got.n > 0) {
-        app.data.wallet[got.cur] += Math.min(1000, got.n); app.saveSoon(); ui.renderTop();
-        SND.play('buy'); ui.toast(`🎁 ${g.nick || "Do'stingiz"} sizga ${got.n} ${got.cur === 'gold' ? 'oltin' : 'olmos'} yubordi!`);
+        app.data.wallet[got.cur] += Math.min(GIFT_MAX, got.n); app.saveSoon(); ui.renderTop();
+        const what = `${got.n} ${got.cur === 'gold' ? 'oltin' : 'olmos'}`;
+        SND.play('buy');
+        if (got.from === 'shop') { ui.toast(`💳 To'lov qabul qilindi: +${what} hisobingizga tushdi!`); app.stage && app.stage.celebrate && app.stage.celebrate(); }
+        else ui.toast(`🎁 ${g.nick || 'Admin'} sizga ${what} yubordi!`);
       }
     } catch (e) { console.warn(e); claiming.delete(g.id); }
   }

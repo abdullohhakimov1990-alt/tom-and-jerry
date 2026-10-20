@@ -12,15 +12,16 @@ export const ADMIN_WALLET = { gold: 1000, diamond: 100 };
 export const GIFT_MAX = 100000;
 
 // ---------------- DONAT (haqiqiy pulga) ----------------
-// Kurs: 30 olmos = 1$, 200 oltin = 0.30$
+// Kurs: 30 olmos = 1$, 200 oltin = 0.30$. Payme/Click so'mda oladi (uzs).
+// Narxni o'zgartirsangiz, functions/packs.js da ham xuddi shunday o'zgartiring!
 export const DONATE = [
-  { id: 'd30', cur: 'diamond', n: 30, usd: 1 },
-  { id: 'd90', cur: 'diamond', n: 90, usd: 3 },
-  { id: 'd150', cur: 'diamond', n: 150, usd: 5 },
-  { id: 'd300', cur: 'diamond', n: 300, usd: 10, tag: 'Mashhur' },
-  { id: 'g200', cur: 'gold', n: 200, usd: 0.30 },
-  { id: 'g1000', cur: 'gold', n: 1000, usd: 1.50 },
-  { id: 'g4000', cur: 'gold', n: 4000, usd: 6, tag: 'Foydali' },
+  { id: 'd30', cur: 'diamond', n: 30, usd: 1, uzs: 12900 },
+  { id: 'd90', cur: 'diamond', n: 90, usd: 3, uzs: 38000 },
+  { id: 'd150', cur: 'diamond', n: 150, usd: 5, uzs: 63000 },
+  { id: 'd300', cur: 'diamond', n: 300, usd: 10, uzs: 125000, tag: 'Mashhur' },
+  { id: 'g200', cur: 'gold', n: 200, usd: 0.30, uzs: 3900 },
+  { id: 'g1000', cur: 'gold', n: 1000, usd: 1.50, uzs: 19000 },
+  { id: 'g4000', cur: 'gold', n: 4000, usd: 6, uzs: 76000, tag: 'Foydali' },
 ];
 
 // ---------------- SKIN TO'PLAMLARI ----------------

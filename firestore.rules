@@ -56,6 +56,13 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.to == me();
     }
 
+    // Donat buyurtmalari: o'yinchi yaratadi, holatini faqat to'lov serveri o'zgartiradi
+    match /orders/{oid} {
+      allow read: if signedIn() && resource.data.uid == me();
+      allow create: if signedIn() && request.resource.data.uid == me() && request.resource.data.status == 'new'
+        && request.resource.data.pack is string && request.resource.data.provider in ['payme', 'click'];
+    }
+
     // Do'stlik so'rovlari: hujjat id = "<kimga>_<kimdan>"
     match /requests/{rid} {
       allow read: if signedIn() && (resource == null || resource.data.to == me() || resource.data.from == me());
