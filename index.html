@@ -73,6 +73,7 @@
   <div class="menu-right">
     <button id="btnShop" class="btn purple">🛒 Do'kon</button>
     <button id="btnRules" class="btn blue">📖 Qoidalar</button>
+    <button id="btnAdmin" class="btn gold hidden">👑 Admin panel</button>
     <button id="btnPlay" class="btn play">O'YNASH<small id="playAs">Jerry bo'lib</small></button>
   </div>
 </div>
@@ -96,7 +97,7 @@
     <button class="x" data-close="shop">✕</button>
   </div>
   <div class="tabs shop-tabs">
-    <button class="tab on" data-stab="skins">Skinlar</button><button class="tab" data-stab="items">Buyumlar</button><button class="tab" data-stab="music">Musiqa</button>
+    <button class="tab donate-tab" data-stab="donate">💳 Donat</button><button class="tab on" data-stab="skins">Skinlar</button><button class="tab" data-stab="items">Buyumlar</button><button class="tab" data-stab="music">Musiqa</button>
     <button class="tab" data-stab="icons">Profil ikonkalari</button><button class="tab" data-stab="colors">Nik ranglari</button><button class="tab" data-stab="exchange">Almashtirish</button>
   </div>
   <div id="shopBody"></div>
@@ -214,6 +215,23 @@
   <div class="spinner"></div>
   <div><b id="waitNick" class="nick"></b> taklifni qabul qilishini kutyapmiz</div>
   <button id="btnWaitCancel" class="btn red">Bekor qilish</button>
+</div></div>
+<div id="adminPanel" class="modal hidden"><div class="mbox wide">
+  <button class="x" data-close="adminPanel">✕</button>
+  <h2 id="apTitle">👑 Admin panel</h2>
+  <div class="ap-sec">
+    <h4>🎁 Sovg'a yuborish (o'yinchi ID'si bo'yicha)</h4>
+    <div class="sub" style="text-align:left">Donat qilgan yoki g'olib bo'lgan o'yinchiga olmos/oltin yuborish. O'yinchi o'yinni ochishi bilan hisobiga tushadi.</div>
+    <div class="ap-row"><input id="apGiftPid" inputmode="numeric" maxlength="8" placeholder="O'yinchi ID (8 raqam)"><input id="apGiftN" type="number" min="1" value="30" placeholder="Soni">
+      <select id="apGiftCur"><option value="diamond">💎 Olmos</option><option value="gold">🪙 Oltin</option></select><button id="btnApGift" class="btn orange">Yuborish</button></div>
+    <div id="apGiftMsg" class="msg"></div>
+  </div>
+  <div class="ap-sec super-only">
+    <h4>⭐ Adminlar (faqat Super Admin boshqaradi)</h4>
+    <div class="ap-row"><input id="apAdminPid" inputmode="numeric" maxlength="8" placeholder="O'yinchi ID (8 raqam)"><button id="btnApAdd" class="btn green">Admin qilish</button></div>
+    <div id="apAdminMsg" class="msg"></div>
+    <div id="apAdmins" class="flist"></div>
+  </div>
 </div></div>
 <div id="gToast"></div>
 <div id="confirm" class="modal hidden"><div class="mbox center"><div id="cfText"></div><div class="row"><button id="cfYes" class="btn orange">Ha</button><button id="cfNo" class="btn">Yo'q</button></div></div></div>

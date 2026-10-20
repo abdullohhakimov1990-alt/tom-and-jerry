@@ -5,6 +5,16 @@ service cloud.firestore {
   match /databases/{db}/documents {
     function signedIn() { return request.auth != null; }
     function me() { return request.auth.uid; }
+    // Super Admin — Google pochtasi bo'yicha (tasdiqlangan)
+    function isSuper() { return signedIn() && request.auth.token.email == 'abdullohhakimov1990@gmail.com' && request.auth.token.email_verified == true; }
+    // Admin — Super Admin tayinlagan o'yinchi
+    function isAdmin() { return isSuper() || (signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.uid))); }
+
+    // Adminlar ro'yxati: hamma o'qiy oladi, faqat Super Admin o'zgartiradi
+    match /admins/{uid} {
+      allow read: if signedIn();
+      allow write: if isSuper();
+    }
 
     // Ochiq profil: nik, ID, ikonka, rang, oxirgi kirgan vaqt (do'stlar ko'radi)
     match /profiles/{uid} {
@@ -37,11 +47,11 @@ service cloud.firestore {
       }
     }
 
-    // Sovg'alar (olmos/oltin ulashish): yuboruvchi yaratadi, qabul qiluvchi o'qib o'chiradi
+    // Sovg'alar: FAQAT admin yubora oladi, qabul qiluvchi o'qib o'chiradi
     match /gifts/{gid} {
-      allow create: if signedIn() && request.resource.data.from == me() && request.resource.data.to != me()
+      allow create: if isAdmin() && request.resource.data.from == me() && request.resource.data.to != me()
         && request.resource.data.cur in ['gold', 'diamond']
-        && request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= 1000;
+        && request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= 100000;
       allow read: if signedIn() && (resource.data.to == me() || resource.data.from == me());
       allow delete: if signedIn() && resource.data.to == me();
     }

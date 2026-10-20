@@ -1,5 +1,6 @@
 // Menyular: bosh menyu, do'kon, do'stlar paneli, profil, sozlamalar, natija oynasi.
-import { SETS, ITEMS, MUSIC, ICONS, COLORS, RATE, CHAR_PRICE, CUR_NAME, RAR_NAME, setById } from './catalog.js';
+import { SETS, ITEMS, MUSIC, ICONS, COLORS, RATE, CHAR_PRICE, CUR_NAME, RAR_NAME, setById, DONATE, GIFT_MAX } from './catalog.js';
+import { PAYMENT } from './config.js';
 import { iconURL, skinURL, buildSkinShots } from './icons.js';
 import { checkNick, ONLINE_MS } from './backend.js';
 import * as SND from './audio.js';
@@ -22,6 +23,10 @@ ui.init = function (a) {
   });
   $('btnShop').onclick = () => ui.openShop('skins');
   $('btnRules').onclick = () => ui.open('rules');
+  $('btnAdmin').onclick = () => ui.openAdmin();
+  $('btnApGift').onclick = ui.adminGift;
+  $('btnApAdd').onclick = () => ui.adminSet($('apAdminPid').value, true);
+  for (const id of ['apGiftPid', 'apAdminPid']) $(id).addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
   $('btnSettings').onclick = () => ui.openSettings();
   $('btnFriends').onclick = () => ui.openFriends();
   $('profileChip').onclick = () => ui.openProfile();
@@ -87,7 +92,8 @@ ui.confirm = text => new Promise(res => {
 ui.renderTop = function () {
   const d = app.data, p = app.profile; if (!d || !p) return;
   for (const [id, k] of [['wSir', 'sir'], ['wGold', 'gold'], ['wDia', 'diamond']]) { $(id).textContent = fmt(d.wallet[k]); document.querySelectorAll('.' + id).forEach(e => e.textContent = fmt(d.wallet[k])); }
-  $('pcIcon').src = iconURL[p.icon] || iconURL.j_classic; $('pcNick').innerHTML = nickHTML(p.nick, p.color) + (app.isAdmin ? ' <span class="admin-badge">👑 ADMIN</span>' : ''); $('pcId').textContent = p.pid;
+  $('pcIcon').src = iconURL[p.icon] || iconURL.j_classic; $('pcNick').innerHTML = nickHTML(p.nick, p.color) + (app.isSuper ? ' <span class="admin-badge">👑 SUPER ADMIN</span>' : app.isAdmin ? ' <span class="admin-badge">⭐ ADMIN</span>' : '');
+  $('btnAdmin').classList.toggle('hidden', !app.isAdmin); $('pcId').textContent = p.pid;
   $('frMyId').textContent = p.pid;
   $('playAs').textContent = (d.char === 'tom' ? 'Tom' : 'Jerry') + " bo'lib";
   ui.renderCards();
@@ -206,6 +212,19 @@ ui.renderShop = function () {
     }).join('')}</div>`;
     body.querySelectorAll('[data-ce]').forEach(b => b.onclick = () => ui.setColor(b.dataset.ce));
     body.querySelectorAll('[data-cb]').forEach(b => b.onclick = async () => { const c = COLORS.find(x => x.id === b.dataset.cb); if (await pay(c.cur, c.price, c.name + ' nik rangi')) { own.colors[c.id] = 1; ui.setColor(c.id); } });
+  } else if (shopTab === 'donate') {
+    const pack = p => `<div class="dcard ${p.cur}">${p.tag ? `<span class="dtag">${p.tag}</span>` : ''}
+        <div class="damt">${curIco(p.cur)} <b>${fmt(p.n)}</b></div><div class="dname">${p.cur === 'diamond' ? 'olmos' : 'oltin'}</div>
+        <button class="btn ${p.cur === 'diamond' ? 'blue' : 'gold'}" data-don="${p.id}">$${p.usd.toFixed(2)}</button></div>`;
+    const card = (d.payCard && d.payCard.last4) ? `💳 •••• ${esc(d.payCard.last4)}` : "Karta qo'shilmagan";
+    body.innerHTML = `<div class="sub" style="text-align:left">Kurs: <b>30 olmos = $1</b>, <b>200 oltin = $0.30</b>. To'langan zahoti hisobingizga tushadi.</div>
+      <div class="sec-title">OLMOS</div><div class="dgrid">${DONATE.filter(p => p.cur === 'diamond').map(pack).join('')}</div>
+      <div class="sec-title">OLTIN</div><div class="dgrid">${DONATE.filter(p => p.cur === 'gold').map(pack).join('')}</div>
+      <div class="sec-title">TO'LOV KARTASI</div>
+      <div class="lrow"><span class="ic" style="--c:#42a5f5">💳</span><div class="info"><b>${card}</b><div>Karta to'lov tizimi sahifasida qo'shiladi va keyingi to'lovlar o'sha kartadan avtomatik yechiladi. Karta raqami o'yinda saqlanmaydi.</div></div>
+        <button class="btn blue" id="btnAddCard">+ Karta qo'shish</button></div>`;
+    body.querySelectorAll('[data-don]').forEach(b => b.onclick = () => ui.donate(DONATE.find(p => p.id === b.dataset.don)));
+    $('btnAddCard').onclick = () => ui.payNotReady("Karta qo'shish");
   } else if (shopTab === 'exchange') {
     const w = d.wallet, maxG = Math.floor(w.sir / RATE.SIR_PER_GOLD), maxD = Math.floor(w.gold / RATE.GOLD_PER_DIAMOND);
     body.innerHTML = `<div class="exch">
@@ -241,8 +260,9 @@ ui.renderFriends = function () {
   $('frList').classList.toggle('hidden', frTab !== 'list'); $('rqList').classList.toggle('hidden', frTab !== 'req');
   const row = (f, acts) => {
     const on = Date.now() - (f.lastSeen || 0) < ONLINE_MS, recent = Date.now() - (f.lastSeen || 0) < 86400000 * 3;
-    return `<div class="frow"><img src="${iconURL[f.icon] || iconURL.j_classic}" alt=""><div class="fi"><div class="fn">${nickHTML(f.nick || '???', f.color)}</div>
-      <div class="fs"><span class="dot ${on ? 'on' : recent ? 'recent' : ''}"></span>${acts ? 'ID: ' + esc(f.pid) : ago(f.lastSeen) + ' · ID: ' + esc(f.pid)}</div></div><div class="acts">${acts || `${on ? `<button class="btn small orange" data-inv="${f.uid}" title="O'yinga chaqirish">🎮</button>` : ''}<button class="btn small gold" data-gf="${f.uid}" title="Sovg'a">🎁</button><button class="btn small" data-rm="${f.uid}" title="O'chirish">✕</button>`}</div></div>`;
+    const adm = (app.admins || []).some(a => a.uid === f.uid) ? ' <span class="admin-badge">⭐</span>' : '';
+    return `<div class="frow"><img src="${iconURL[f.icon] || iconURL.j_classic}" alt=""><div class="fi"><div class="fn">${nickHTML(f.nick || '???', f.color)}${adm}</div>
+      <div class="fs"><span class="dot ${on ? 'on' : recent ? 'recent' : ''}"></span>${acts ? 'ID: ' + esc(f.pid) : ago(f.lastSeen) + ' · ID: ' + esc(f.pid)}</div></div><div class="acts">${acts || `${on ? `<button class="btn small orange" data-inv="${f.uid}" title="O'yinga chaqirish">🎮</button>` : ''}${app.isAdmin ? `<button class="btn small gold" data-gf="${f.uid}" title="Sovg'a">🎁</button>` : ''}<button class="btn small" data-rm="${f.uid}" title="O'chirish">✕</button>`}</div></div>`;
   };
   const sorted = friends.slice().sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
   const online = sorted.filter(f => Date.now() - (f.lastSeen || 0) < ONLINE_MS), recent = sorted.filter(f => !online.includes(f) && Date.now() - (f.lastSeen || 0) < 86400000 * 3), rest = sorted.filter(f => !online.includes(f) && !recent.includes(f));
@@ -317,7 +337,8 @@ ui.openGift = function (f) {
   upd();
   $('btnGift').onclick = async () => {
     const n = Math.floor(+$('giftN').value);
-    if (!(n >= 1 && n <= 1000)) { ui.toast('1 dan 1000 gacha son yozing', true); return; }
+    if (!app.isAdmin) { ui.toast("Sovg'ani faqat admin yubora oladi", true); return; }
+    if (!(n >= 1 && n <= GIFT_MAX)) { ui.toast(`1 dan ${GIFT_MAX} gacha son yozing`, true); return; }
     const w = app.data.wallet;
     if (!app.isAdmin && w[giftCur] < n) { ui.toast(`${CUR_NAME[giftCur]} yetarli emas`, true); SND.play('error'); return; }
     $('btnGift').disabled = true;
@@ -329,4 +350,57 @@ ui.openGift = function (f) {
     } catch (e) { ui.toast(e.message, true); }
     $('btnGift').disabled = false;
   };
+};
+
+// ---------------- donat ----------------
+ui.donate = function (pk) {
+  if (!pk) return;
+  const link = PAYMENT && PAYMENT.links && PAYMENT.links[pk.id];
+  if (!link) { ui.payNotReady(`${fmt(pk.n)} ${pk.cur === 'diamond' ? 'olmos' : 'oltin'} — $${pk.usd.toFixed(2)}`); return; }
+  // to'lov sahifasi o'yinchining ID'si bilan ochiladi (to'lov tasdiqlangach server hisobga qo'shadi)
+  const url = link + (link.includes('?') ? '&' : '?') + 'client_reference_id=' + encodeURIComponent(app.user.uid) + '&pid=' + encodeURIComponent(app.profile.pid);
+  window.open(url, '_blank', 'noopener');
+};
+ui.payNotReady = function (what) {
+  ui.confirm(`<b>${esc(what)}</b><br><br>Karta orqali to'lov hali ulanmagan — to'lov tizimi (Payme / Click / Stripe) sozlanmoqda.<br><br>Hozircha donat uchun admin bilan bog'laning va o'z ID raqamingizni yuboring: <b>${esc(app.profile.pid)}</b>`).then(() => { });
+};
+
+// ---------------- admin panel ----------------
+let adminsList = [];
+ui.setAdmins = list => { adminsList = list || []; if (!$('adminPanel').classList.contains('hidden')) ui.renderAdmins(); ui.renderFriends(); };
+ui.openAdmin = function () {
+  if (!app.isAdmin) return;
+  $('apTitle').textContent = app.isSuper ? '👑 Super Admin panel' : '⭐ Admin panel';
+  document.querySelectorAll('.super-only').forEach(e => e.classList.toggle('hidden', !app.isSuper));
+  ui.open('adminPanel'); ui.renderAdmins(); SND.play('click');
+};
+ui.renderAdmins = function () {
+  const el = $('apAdmins'); if (!el) return;
+  el.innerHTML = adminsList.length ? adminsList.map(a => `<div class="frow"><div class="fi"><div class="fn">⭐ ${esc(a.nick || '???')}</div><div class="fs">ID: ${esc(a.pid)}</div></div>
+      <div class="acts"><button class="btn small red" data-unadm="${esc(a.pid)}">Adminlikdan olish</button></div></div>`).join('')
+    : `<div class="empty-msg">Hali adminlar yo'q</div>`;
+  el.querySelectorAll('[data-unadm]').forEach(b => b.onclick = async () => { if (await ui.confirm(`ID ${b.dataset.unadm} — adminlikdan olinsinmi?`)) { ui.openAdmin(); ui.adminSet(b.dataset.unadm, false); } else ui.openAdmin(); });
+};
+ui.adminSet = async function (pid, on) {
+  const m = $('apAdminMsg');
+  pid = String(pid || '').trim();
+  if (!app.isSuper) { m.textContent = 'Faqat Super Admin admin tayinlay oladi'; m.className = 'msg bad'; return; }
+  if (!/^\d{8}$/.test(pid)) { m.textContent = 'ID 8 ta raqamdan iborat'; m.className = 'msg bad'; return; }
+  if (pid === app.profile.pid) { m.textContent = "Siz allaqachon Super Adminsiz"; m.className = 'msg bad'; return; }
+  try { await app.backend.setAdmin(pid, on); m.textContent = on ? `ID ${pid} endi ADMIN ⭐` : `ID ${pid} adminlikdan olindi`; m.className = 'msg ok'; $('apAdminPid').value = ''; SND.play('buy'); }
+  catch (e) { m.textContent = e.message; m.className = 'msg bad'; SND.play('error'); }
+};
+ui.adminGift = async function () {
+  const m = $('apGiftMsg'), pid = $('apGiftPid').value.trim(), n = Math.floor(+$('apGiftN').value), cur = $('apGiftCur').value;
+  if (!app.isAdmin) return;
+  if (!/^\d{8}$/.test(pid)) { m.textContent = 'ID 8 ta raqamdan iborat'; m.className = 'msg bad'; return; }
+  if (!(n >= 1 && n <= GIFT_MAX)) { m.textContent = `1 dan ${GIFT_MAX} gacha son yozing`; m.className = 'msg bad'; return; }
+  $('btnApGift').disabled = true;
+  try {
+    const uid = await app.backend.uidByPid(pid);
+    if (uid === app.user.uid) throw new Error("O'zingizga yubora olmaysiz");
+    await app.backend.sendGift(uid, cur, n);
+    m.textContent = `✅ ID ${pid} ga ${fmt(n)} ${cur === 'diamond' ? 'olmos' : 'oltin'} yuborildi`; m.className = 'msg ok'; SND.play('buy');
+  } catch (e) { m.textContent = e.message; m.className = 'msg bad'; SND.play('error'); }
+  $('btnApGift').disabled = false;
 };

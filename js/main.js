@@ -9,7 +9,7 @@ import { makeStage } from './stage.js';
 import { ui } from './ui.js';
 import { Match } from './match.js';
 import { initOnline } from './online.js';
-import { START_WALLET, CHAR_PRICE, ADMINS, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS } from './catalog.js';
+import { START_WALLET, CHAR_PRICE, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS } from './catalog.js';
 import * as SND from './audio.js';
 import { isTouch, goLandscape } from './touch.js';
 
@@ -128,13 +128,17 @@ function enterMenu(acc) {
   app.profile = acc.profile;
   let local = null; try { local = JSON.parse(localStorage.getItem('tj_data_' + app.user.uid)); } catch (e) { }
   app.data = mergeData(acc.data || local);
-  app.isAdmin = ADMINS.includes(String(app.user.email || '').toLowerCase());
-  applyAdmin(app.data);
+  app.role = 'player'; app.isAdmin = false; app.isSuper = false;
+  // rolni serverdan aniqlash (Super Admin / Admin / O'yinchi)
+  app.backend.getRole().then(role => {
+    app.role = role; app.isSuper = role === 'super'; app.isAdmin = role !== 'player';
+    applyAdmin(app.data); ui.renderTop(); if (app.isAdmin) app.saveSoon();
+  });
   if (!acc.data) app.saveNow();
   app.profile.icon = app.profile.icon || app.data.equip.icon; app.profile.color = app.profile.color || app.data.equip.color;
   app.stage.set('jerry', app.data.equip.skin.jerry); app.stage.set('tom', app.data.equip.skin.tom);
   ui.screen('menu'); ui.renderTop();
-  app.unsubs = [app.backend.watchFriends(f => ui.setFriends(f, null)), app.backend.watchRequests(r => ui.setFriends(null, r)), app.backend.watchGifts(onGifts)];
+  app.unsubs = [app.backend.watchFriends(f => ui.setFriends(f, null)), app.backend.watchRequests(r => ui.setFriends(null, r)), app.backend.watchGifts(onGifts), app.backend.watchAdmins(list => { app.admins = list; ui.setAdmins && ui.setAdmins(list); })];
   app.backend.heartbeat();
   Promise.resolve(app.backend.makeNet ? app.backend.makeNet() : null).then(n => { app.backend.net = n; initOnline(app); }).catch(e => console.warn('onlayn ulanmadi', e));
   clearInterval(app.hb); app.hb = setInterval(() => app.backend.heartbeat(), 60000);

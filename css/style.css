@@ -387,3 +387,20 @@ body.touch .stam { width: 180px; }
   .frow img { width: 40px; height: 40px; } .frow .fn { font-size: 15px; } .frow .fs { font-size: 11px; }
   .frow .acts .btn { padding: 3px 7px; font-size: 13px; }
 }
+
+/* donat va admin panel */
+.donate-tab { background: linear-gradient(#ffe066, #ff9f1c) !important; color: #3a2400 !important; border-color: #fff !important; }
+.donate-tab.on { box-shadow: 0 0 14px rgba(255,200,0,.7); }
+.dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 8px; }
+.dcard { position: relative; border-radius: 16px; padding: 14px 10px 10px; text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; border: 2px solid rgba(255,255,255,.2);
+  background: radial-gradient(circle at 50% 20%, rgba(64,224,255,.25), rgba(255,255,255,.05)); }
+.dcard.gold { background: radial-gradient(circle at 50% 20%, rgba(255,200,40,.3), rgba(255,255,255,.05)); }
+.dcard .damt { font-size: 26px; display: flex; align-items: center; gap: 6px; } .dcard .damt .cur { width: 30px; height: 30px; }
+.dcard .dname { font-size: 13px; color: var(--muted); margin-top: -6px; }
+.dcard .btn { width: 100%; font-size: 18px; padding: 6px; }
+.dtag { position: absolute; top: -8px; right: -6px; background: var(--red); font-size: 11px; font-weight: 800; padding: 1px 8px; border-radius: 8px; border: 2px solid #fff; }
+.ap-sec { background: rgba(255,255,255,.06); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.ap-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.ap-row input, .ap-row select { flex: 1; min-width: 90px; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 2px solid rgba(255,255,255,.35); background: rgba(0,0,0,.35); color: #fff; font-family: inherit; font-weight: 700; }
+.ap-row select option { background: #2a1840; }
+#apAdmins { max-height: 220px; }

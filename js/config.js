@@ -14,3 +14,11 @@ export const FIREBASE_CONFIG = {
   // Onlayn o'yin (do'st bilan) uchun Realtime Database
   databaseURL: "https://tom-and-jerry-katta-uy-default-rtdb.europe-west1.firebasedatabase.app",
 };
+
+// ============================================================
+//  DONAT TO'LOVLARI (karta orqali)
+//  To'lov tizimida (Stripe Payment Links, Payme, Click) har bir to'plam uchun havola
+//  yaratiladi va shu yerga yoziladi. Bo'sh bo'lsa, tugma "to'lov ulanmagan" deydi.
+//  Masalan: links: { d30: 'https://buy.stripe.com/xxxx', g200: '...' }
+// ============================================================
+export const PAYMENT = { provider: null, links: {} };

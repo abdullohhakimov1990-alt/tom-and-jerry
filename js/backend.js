@@ -1,7 +1,7 @@
 // Akkaunt, profil, saqlash va do'stlar tizimi.
 // Firebase sozlangan bo'lsa — Google orqali kirish + Firestore; aks holda — brauzer ichidagi offline rejim.
 import { FIREBASE_CONFIG } from './config.js';
-import { NICK_MIN, NICK_MAX } from './catalog.js';
+import { NICK_MIN, NICK_MAX, SUPER_ADMINS } from './catalog.js';
 import { firebaseNet, localNet } from './net.js';
 
 export const ONLINE_MS = 2.5 * 60 * 1000;
@@ -41,7 +41,7 @@ function localBackend() {
   const SLOT = new URLSearchParams(location.search).get('slot') || '';
   const KEY = 'tj_db_v1', SES = 'tj_session_v1' + SLOT;
   const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
-  const db = () => { const d = read(); for (const k of ['users', 'profiles', 'pids', 'requests', 'friends', 'gifts']) d[k] ||= {}; return d; };
+  const db = () => { const d = read(); for (const k of ['users', 'profiles', 'pids', 'requests', 'friends', 'gifts', 'admins']) d[k] ||= {}; return d; };
   const write = d => { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { } emit(); };
   const subs = new Set(); const emit = () => subs.forEach(f => f());
   window.addEventListener('storage', e => { if (e.key === KEY) emit(); });
@@ -104,6 +104,11 @@ function localBackend() {
     },
     async claimGift(id) { const d = db(); const g = d.gifts[id]; if (!g || g.to !== me.uid) return null; delete d.gifts[id]; write(d); return g; },
   };
+  // rollar (offline sinovda ?superadmin bilan Super Admin bo'lish mumkin)
+  B.getRole = async () => new URLSearchParams(location.search).has('superadmin') ? 'super' : (db().admins[me.uid] ? 'admin' : 'player');
+  B.uidByPid = async pid => { const uid = db().pids[String(pid).trim()]; if (!uid) throw new Error('Bunday ID topilmadi'); return uid; };
+  B.setAdmin = async (pid, on) => { const uid = await B.uidByPid(pid); const d = db(); if (on) d.admins[uid] = { pid, nick: (d.profiles[uid] || {}).nick, by: me.uid, created: Date.now() }; else delete d.admins[uid]; write(d); return uid; };
+  B.watchAdmins = cb => { const f = () => { const d = db(); cb(Object.entries(d.admins).map(([uid, a]) => Object.assign({ uid }, a))); }; subs.add(f); f(); return () => subs.delete(f); };
   B.slot = SLOT;
   B.makeNet = async () => localNet(me.uid);
   return B;
@@ -191,6 +196,20 @@ async function firebaseBackend(cfg) {
       await b.commit();
     },
   };
+  // ---- rollar: Super Admin (pochta bo'yicha) va adminlar (admins kolleksiyasi) ----
+  B.getRole = async () => {
+    const u = auth.currentUser;
+    if (u && u.emailVerified && SUPER_ADMINS.includes(String(u.email || '').toLowerCase())) return 'super';
+    try { return (await getDoc(doc(db, 'admins', me.uid))).exists() ? 'admin' : 'player'; } catch (e) { return 'player'; }
+  };
+  B.uidByPid = async pid => { const s = await getDoc(doc(db, 'pids', String(pid).trim())); if (!s.exists()) throw new Error('Bunday ID topilmadi'); return s.data().uid; };
+  B.setAdmin = async (pid, on) => {
+    const uid = await B.uidByPid(pid);
+    if (on) { const p = await getDoc(doc(db, 'profiles', uid)); await setDoc(doc(db, 'admins', uid), { pid: String(pid), nick: p.exists() ? p.data().nick : '', by: me.uid, created: serverTimestamp() }); }
+    else await deleteDoc(doc(db, 'admins', uid));
+    return uid;
+  };
+  B.watchAdmins = cb => onSnapshot(collection(db, 'admins'), snap => cb(snap.docs.map(d => Object.assign({ uid: d.id }, d.data()))), e => console.error('Adminlar:', fbErr(e)));
   // onlayn o'yin (Realtime Database)
   B.makeNet = async () => cfg.databaseURL ? firebaseNet(app, cfg, me.uid) : null;
   // sovg'alar (olmos/oltin ulashish)
@@ -206,7 +225,7 @@ async function firebaseBackend(cfg) {
   });
   // har bir amal xatosini o'zbekcha tushuntirish bilan qaytarish
   for (const k of Object.keys(B)) {
-    if (typeof B[k] !== 'function' || ['onAuth', 'watchRequests', 'watchFriends', 'watchGifts', 'makeNet'].includes(k)) continue;
+    if (typeof B[k] !== 'function' || ['onAuth', 'watchRequests', 'watchFriends', 'watchGifts', 'watchAdmins', 'makeNet'].includes(k)) continue;
     const f = B[k];
     B[k] = async (...a) => { try { return await f(...a); } catch (e) { console.error('Firebase:', k, e); throw new Error(fbErr(e)); } };
   }

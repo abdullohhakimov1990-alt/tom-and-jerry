@@ -5,9 +5,23 @@ export const CHAR_PRICE = { tom: 3, jerry: 2 };          // personaj almashtiris
 export const START_WALLET = { sir: 200, gold: 5, diamond: 0 };
 export const CUR_NAME = { sir: 'Sir', gold: 'Oltin', diamond: 'Olmos' };
 export const NICK_MIN = 3, NICK_MAX = 15;
-// Admin akkauntlar (Google pochtasi): hamma narsa ochiq, olmos va oltin kamaymaydi
-export const ADMINS = ['abdullohhakimov1990@gmail.com'];
+// Super Admin (Google pochtasi): hamma narsa ochiq, olmos/oltin kamaymaydi, boshqalarni admin qila oladi.
+// Adminlar ro'yxati Firestore'da (admins) saqlanadi — ularni faqat Super Admin qo'shadi/o'chiradi.
+export const SUPER_ADMINS = ['abdullohhakimov1990@gmail.com'];
 export const ADMIN_WALLET = { gold: 1000, diamond: 100 };
+export const GIFT_MAX = 100000;
+
+// ---------------- DONAT (haqiqiy pulga) ----------------
+// Kurs: 30 olmos = 1$, 200 oltin = 0.30$
+export const DONATE = [
+  { id: 'd30', cur: 'diamond', n: 30, usd: 1 },
+  { id: 'd90', cur: 'diamond', n: 90, usd: 3 },
+  { id: 'd150', cur: 'diamond', n: 150, usd: 5 },
+  { id: 'd300', cur: 'diamond', n: 300, usd: 10, tag: 'Mashhur' },
+  { id: 'g200', cur: 'gold', n: 200, usd: 0.30 },
+  { id: 'g1000', cur: 'gold', n: 1000, usd: 1.50 },
+  { id: 'g4000', cur: 'gold', n: 4000, usd: 6, tag: 'Foydali' },
+];
 
 // ---------------- SKIN TO'PLAMLARI ----------------
 // Har bir to'plamda Tom va Jerry uchun bir xil mavzudagi skin bor.
