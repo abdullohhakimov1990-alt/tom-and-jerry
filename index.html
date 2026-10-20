@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Tom and Jerry: Katta Uy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="game"></div>
+<div id="vignette"></div>
+<div id="dangerGlow"></div>
+
+<!-- ============ YUKLANISH ============ -->
+<div id="loading" class="screen solid">
+  <div class="logo"><div class="logo-top">TOM <span>&amp;</span> JERRY</div><div class="logo-sub">KATTA UY</div></div>
+  <div class="loadbar"><i id="loadFill"></i></div>
+  <div id="loadText">Yuklanmoqda...</div>
+</div>
+
+<!-- ============ KIRISH ============ -->
+<div id="auth" class="screen hidden">
+  <div class="logo"><div class="logo-top">TOM <span>&amp;</span> JERRY</div><div class="logo-sub">KATTA UY</div></div>
+  <div class="card-box">
+    <h3>Akkauntga kirish</h3>
+    <button id="btnGoogle" class="google"><svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Google bilan kirish</button>
+    <div id="localBox" class="hidden">
+      <div class="note">Firebase hali sozlanmagan — <b>offline sinov rejimi</b>. Akkaunt va do'stlar faqat shu brauzerda saqlanadi.</div>
+      <button id="btnGuest" class="btn blue">Mehmon sifatida kirish</button>
+      <button id="btnGuestNew" class="btn small">Yangi mehmon akkaunt</button>
+    </div>
+    <div id="authErr" class="err"></div>
+  </div>
+</div>
+
+<!-- ============ RO'YXATDAN O'TISH ============ -->
+<div id="register" class="screen hidden">
+  <div class="card-box">
+    <h3>Nik tanlang</h3>
+    <div class="sub">3 tadan 15 tagacha harf. Keyin profilda o'zgartirish mumkin.</div>
+    <div class="nickrow"><input id="nickInput" maxlength="15" placeholder="Masalan: Jerry_Uz" autocomplete="off"><span id="nickCount">0/15</span></div>
+    <div id="regErr" class="err"></div>
+    <button id="btnRegister" class="btn orange big">Davom etish</button>
+  </div>
+</div>
+
+<!-- ============ BOSH MENYU ============ -->
+<div id="menu" class="hidden">
+  <div class="topbar">
+    <div id="profileChip" class="chip-profile" title="Profil">
+      <img id="pcIcon" alt="">
+      <div><div id="pcNick" class="nick">...</div><div class="pid">ID: <span id="pcId">--------</span></div></div>
+    </div>
+    <div class="wallet">
+      <div class="cur-chip"><span class="cur sir"></span><b id="wSir">0</b><button data-ex="sir" title="Almashtirish">+</button></div>
+      <div class="cur-chip"><span class="cur gold"></span><b id="wGold">0</b><button data-ex="gold" title="Sotib olish">+</button></div>
+      <div class="cur-chip"><span class="cur diamond"></span><b id="wDia">0</b><button data-ex="diamond" title="Sotib olish">+</button></div>
+      <button id="btnSettings" class="icon-btn" title="Sozlamalar">⚙</button>
+    </div>
+  </div>
+  <button id="btnFriends" class="friends-btn"><span class="fb-ic">👥</span><span>Do'stlar</span><i id="frBadge" class="badge hidden">0</i></button>
+  <div class="menu-logo"><div class="logo-top sm">TOM <span>&amp;</span> JERRY</div><div class="logo-sub sm">KATTA UY</div></div>
+  <div id="charCards"></div>
+  <div class="menu-right">
+    <button id="btnShop" class="btn purple">🛒 Do'kon</button>
+    <button id="btnRules" class="btn blue">📖 Qoidalar</button>
+    <button id="btnPlay" class="btn play">O'YNASH<small id="playAs">Jerry bo'lib</small></button>
+  </div>
+</div>
+
+<!-- ============ DO'STLAR (yon panel) ============ -->
+<div id="friends" class="drawer">
+  <div class="dr-head"><h3>Do'stlar</h3><button class="x" data-close="friends">✕</button></div>
+  <div class="myid">Sizning ID: <b id="frMyId">--------</b> <button id="btnCopyId" class="btn small">Nusxa</button></div>
+  <div class="addrow"><input id="frInput" placeholder="Do'stning ID raqami" inputmode="numeric" maxlength="8"><button id="btnAddFriend" class="btn orange">Qo'shish</button></div>
+  <div id="frMsg" class="msg"></div>
+  <div class="tabs"><button class="tab on" data-ftab="list">Do'stlar <i id="frCount">0</i></button><button class="tab" data-ftab="req">So'rovlar <i id="rqCount">0</i></button></div>
+  <div id="frList" class="flist"></div>
+  <div id="rqList" class="flist hidden"></div>
+</div>
+
+<!-- ============ DO'KON ============ -->
+<div id="shop" class="panel hidden">
+  <div class="pn-head">
+    <h2>Do'kon</h2>
+    <div class="wallet sm"><div class="cur-chip"><span class="cur sir"></span><b class="wSir">0</b></div><div class="cur-chip"><span class="cur gold"></span><b class="wGold">0</b></div><div class="cur-chip"><span class="cur diamond"></span><b class="wDia">0</b></div></div>
+    <button class="x" data-close="shop">✕</button>
+  </div>
+  <div class="tabs shop-tabs">
+    <button class="tab on" data-stab="skins">Skinlar</button><button class="tab" data-stab="items">Buyumlar</button><button class="tab" data-stab="music">Musiqa</button>
+    <button class="tab" data-stab="icons">Profil ikonkalari</button><button class="tab" data-stab="colors">Nik ranglari</button><button class="tab" data-stab="exchange">Almashtirish</button>
+  </div>
+  <div id="shopBody"></div>
+</div>
+
+<!-- ============ PROFIL ============ -->
+<div id="profile" class="modal hidden"><div class="mbox">
+  <button class="x" data-close="profile">✕</button>
+  <div class="prof-top"><img id="prIcon" alt=""><div><div id="prNick" class="nick big">...</div><div class="pid">ID: <b id="prId"></b> <button id="btnCopyId2" class="btn small">Nusxa</button></div></div></div>
+  <div class="nickrow"><input id="prNickInput" maxlength="15"><button id="btnRename" class="btn blue">Nikni o'zgartirish</button></div>
+  <div id="prErr" class="err"></div>
+  <h4>Ikonka</h4><div id="prIcons" class="icon-grid"></div>
+  <h4>Nik rangi</h4><div id="prColors" class="color-grid"></div>
+  <h4>Statistika</h4><div id="prStats" class="stats"></div>
+</div></div>
+
+<!-- ============ SOZLAMALAR ============ -->
+<div id="settings" class="modal hidden"><div class="mbox">
+  <button class="x" data-close="settings">✕</button>
+  <h2>Sozlamalar</h2>
+  <label class="set">Grafika sifati <select id="sQuality"><option value="low">Past</option><option value="medium">O'rta</option><option value="high">Yuqori</option><option value="ultra">Ultra</option></select></label>
+  <div class="hint small">Sifat o'zgarganda o'yin qayta yuklanadi.</div>
+  <label class="set">Avtomatik ruxsat (FPS ni ushlab turadi) <input id="sAuto" type="checkbox"></label>
+  <label class="set">Sichqoncha sezgirligi <input id="sSens" type="range" min=".2" max="3" step=".05"><span id="sSensV"></span></label>
+  <label class="set">Ko'rish burchagi (FOV) <input id="sFov" type="range" min="55" max="100" step="1"><span id="sFovV"></span></label>
+  <label class="set">Sichqonchani teskari (Y) <input id="sInv" type="checkbox"></label>
+  <label class="set">Ovoz <input id="sVol" type="range" min="0" max="1" step=".05"></label>
+  <label class="set">Musiqa <input id="sMus" type="range" min="0" max="1" step=".05"></label>
+  <button id="btnLogout" class="btn red">Akkauntdan chiqish</button>
+</div></div>
+
+<!-- ============ QOIDALAR ============ -->
+<div id="rules" class="modal hidden"><div class="mbox wide">
+  <button class="x" data-close="rules">✕</button>
+  <h2>O'yin qoidalari</h2>
+  <div class="rules-text">
+    <p><b>Maqsad.</b> Katta uyda 12 ta xona bor. <b>Jerry</b> bo'lib o'ynasang — 3 daqiqa davomida Tomga 3 marta ushlanmasdan yashab qol. <b>Tom</b> bo'lib o'ynasang — 3 daqiqa ichida Jerryni 3 marta ushla.</p>
+    <p><b>Boshqaruv.</b> Sichqoncha — qarash (Minecraftdagidek, ekranni bir bosing). <kbd>W A S D</kbd> — yurish, <kbd>Shift</kbd> — yugurish (chidamlilik tugaydi), <kbd>Space</kbd> — sakrash, <kbd>C</kbd> — yashirinish, <kbd>1</kbd>-<kbd>7</kbd> — buyumlar, <kbd>V</kbd> — 1-shaxs/3-shaxs ko'rinish, <kbd>M</kbd> — katta xarita, <kbd>Esc</kbd> — pauza. Tom uchun <kbd>Sichqoncha chap</kbd> yoki <kbd>Q</kbd> — sakrab tashlanish.</p>
+    <p><b>C tugmasi (yashirinish).</b> Bossang, eng yaqin yashirinish joyi yashil nuqtalar bilan ko'rsatiladi. O'sha yerga yetib borishing bilan avtomatik yashirinasan. Yashiringanda yana <kbd>C</kbd> — chiqish. Uyda 47 ta yashirinish joyi bor: qutilar, etiklar, gul tuvaklar, sichqon inlari, choynak, katta pishloq va boshqalar.</p>
+    <p><b>Tomning ko'zi</b> (chap yuqorida). <b>Ochiq qizil</b> — Tom seni hozir ko'ryapti. <b>Yopiq</b> — ko'rmayapti. <b>Sariq</b> — qidiryapti. Ko'z ochiq paytda yashirinsang — Tom qayerga kirganingni ko'radi va sudrab chiqaradi (bu ushlanish hisoblanadi).</p>
+    <p><b>Qidiruv.</b> Tom seni yo'qotsa, oxirgi ko'rgan joyiga boradi va yaqin atrofdagi 3 ta joyni tekshiradi. Shuning uchun Tomdan uzoqroqqa yashirin! Tom ketgandan keyin chiqsang — <b>+10 sir</b> bonus. Agar chiqqanda Tom seni ko'rib qolsa — ekran chetlari qizarib ketadi.</p>
+    <p><b>Uyning sirlari.</b> Devorlardagi <b>sichqon teshiklari</b>dan faqat Jerry o'ta oladi. Karavot, stol, stul ostidan ham faqat Jerry o'tadi. Kitoblar, kubiklar, stullar orqali divan, stol, peshtaxtaga sakrab chiqish mumkin (parkur) — tepada sir ko'p.</p>
+    <p><b>Valyuta.</b> O'yinda <b>sir</b> yig'asan. <b>20 sir = 1 oltin</b>, <b>40 oltin = 1 olmos</b> (Do'kon → Almashtirish). Skinlar, buyumlar, musiqa, ikonkalar va nik ranglari oltin yoki olmosga sotiladi. Personaj almashtirish: Tom — 3 oltin, Jerry — 2 oltin.</p>
+    <p><b>Do'stlar.</b> Har bir o'yinchiga 8 xonali ID beriladi. Do'stingning ID'sini yozib so'rov yubor — u qabul qilgach, Do'stlar ro'yxatida onlayn holati ko'rinadi.</p>
+  </div>
+</div></div>
+
+<!-- ============ O'YIN HUD ============ -->
+<div id="hud" class="hidden">
+  <div id="eyeBox" class="closed">
+    <svg viewBox="0 0 120 70" class="eye">
+      <g class="eye-open"><path class="lid" d="M8 35 Q60 -8 112 35 Q60 78 8 35 Z"/><circle class="iris" cx="60" cy="35" r="19"/><ellipse class="pupil" cx="60" cy="35" rx="6" ry="14"/><circle class="shine" cx="67" cy="27" r="4"/><path class="brow" d="M14 12 Q60 -8 106 14"/></g>
+      <g class="eye-closed"><path class="lidline" d="M8 32 Q60 62 112 32"/><path class="lash" d="M30 44 L24 56 M48 50 L45 63 M72 50 L75 63 M90 44 L96 56"/></g>
+    </svg>
+    <div id="eyeLabel">Tom ko'rmayapti</div>
+  </div>
+  <div class="hud-top"><div id="hLives" class="lives"></div><div id="hTimer">3:00</div><div id="hCheese" class="hcheese"></div></div>
+  <div class="mapwrap"><canvas id="minimap" width="220" height="220"></canvas><div id="mapRoom"></div><div class="maphint">M — katta xarita</div></div>
+  <div id="bigmap" class="hidden"><canvas id="bigCanvas" width="1090" height="820"></canvas><div class="bm-hint">M — yopish</div></div>
+  <div id="hSay"></div>
+  <div id="hToast"></div>
+  <div id="hGuide"></div>
+  <div id="hideBar"><div class="lbl">Yashiringansan</div><div class="bar"><i></i></div></div>
+  <div class="hud-bottom"><div id="hPrompt"></div><div id="hStam" class="stam"><i></i></div><div id="hotbar"></div></div>
+  <div id="crosshair" class="hidden"></div>
+  <div id="lockHint" class="hidden">Boshqarish uchun ekranni bosing 🖱️</div>
+</div>
+<div id="countdown" class="hidden"></div>
+
+<!-- ============ PAUZA / NATIJA ============ -->
+<div id="pause" class="modal hidden"><div class="mbox center">
+  <h2>Pauza</h2>
+  <button id="btnResume" class="btn orange big">Davom etish</button>
+  <button id="btnPauseSettings" class="btn blue">Sozlamalar</button>
+  <button id="btnQuit" class="btn red">Chiqish (menyuga)</button>
+</div></div>
+<div id="result" class="modal hidden"><div class="mbox center">
+  <h2 id="resTitle">G'alaba!</h2>
+  <div id="resBody" class="result"></div>
+  <div class="reward"><span class="cur sir"></span>+<b id="resSir">0</b> sir</div>
+  <div class="row"><button id="btnAgain" class="btn orange big">Yana o'ynash</button><button id="btnToMenu" class="btn blue">Menyu</button></div>
+</div></div>
+
+<div id="gToast"></div>
+<div id="confirm" class="modal hidden"><div class="mbox center"><div id="cfText"></div><div class="row"><button id="cfYes" class="btn orange">Ha</button><button id="cfNo" class="btn">Yo'q</button></div></div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

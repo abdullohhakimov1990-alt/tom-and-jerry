@@ -1,0 +1,47 @@
+rules_version = '2';
+// Tom and Jerry: Katta Uy — Firestore xavfsizlik qoidalari
+// Firebase Console -> Firestore Database -> Rules bo'limiga shu matnni qo'ying va "Publish" bosing.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    // Ochiq profil: nik, ID, ikonka, rang, oxirgi kirgan vaqt (do'stlar ko'radi)
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && me() == uid
+        && request.resource.data.nick is string
+        && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15;
+      allow update: if signedIn() && me() == uid
+        && request.resource.data.pid == resource.data.pid
+        && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15;
+    }
+
+    // ID raqam -> uid (takrorlanmas ID uchun)
+    match /pids/{pid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == me() && !exists(/databases/$(db)/documents/pids/$(pid));
+    }
+
+    // Shaxsiy ma'lumotlar: valyuta, skinlar, buyumlar — faqat egasi
+    match /users/{uid} {
+      allow read, write: if signedIn() && me() == uid;
+
+      // Do'stlar ro'yxati
+      match /friends/{fid} {
+        allow read: if signedIn() && me() == uid;
+        allow create: if signedIn() && (
+          (me() == uid && exists(/databases/$(db)/documents/requests/$(uid + '_' + fid))) ||
+          (me() == fid && exists(/databases/$(db)/documents/requests/$(fid + '_' + uid))));
+        allow delete: if signedIn() && (me() == uid || me() == fid);
+      }
+    }
+
+    // Do'stlik so'rovlari: hujjat id = "<kimga>_<kimdan>"
+    match /requests/{rid} {
+      allow read: if signedIn() && (resource == null || resource.data.to == me() || resource.data.from == me());
+      allow create: if signedIn() && request.resource.data.from == me() && rid == request.resource.data.to + '_' + me();
+      allow delete: if signedIn() && (resource.data.to == me() || resource.data.from == me());
+    }
+  }
+}
