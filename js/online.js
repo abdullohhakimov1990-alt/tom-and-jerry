@@ -14,7 +14,9 @@ export function initOnline(app) {
 
   // ---- kelgan takliflar ----
   if (unsubInv) unsubInv();
-  unsubInv = net ? net.watchInvites(list => {
+  let lastList = [];
+  const evaluate = list => {
+    lastList = list;
     const now = net.now();
     const inv = list.filter(i => !i.t || now - i.t < INVITE_TTL).sort((a, b) => (b.t || 0) - (a.t || 0))[0];
     for (const old of list) if (old.t && now - old.t > INVITE_TTL) net.clearInvite(old.from);
@@ -26,8 +28,11 @@ export function initOnline(app) {
     ui.open('invite'); SND.play('squeak');
     $('btnInvYes').onclick = () => accept(inv);
     $('btnInvNo').onclick = () => decline(inv);
-  }) : null;
-  app.unsubs && app.unsubs.push(() => unsubInv && unsubInv());
+  };
+  unsubInv = net ? net.watchInvites(evaluate) : null;
+  // o'yin tugagach yoki vaqt o'tgach qayta tekshirish
+  const iv = net ? setInterval(() => evaluate(lastList), 2000) : null;
+  app.unsubs && app.unsubs.push(() => { unsubInv && unsubInv(); clearInterval(iv); });
 
   async function decline(inv) {
     ui.close('invite'); shown = null;
@@ -51,7 +56,8 @@ export function initOnline(app) {
   app.inviteFriend = async f => {
     if (!f) return;
     if (!net) { ui.toast("Onlayn o'yin uchun Firebase Realtime Database kerak", true); return; }
-    if (app.match || pending) return;
+    if (app.match) return;
+    if (pending) { ui.toast(`${pending.f.nick} javobini kutyapmiz...`); ui.open('waiting'); return; }
     try {
       const room = await net.createRoom(f.uid, { players: { [app.user.uid]: myInfo() } });
       await net.sendInvite(f.uid, Object.assign({ room }, myInfo(), { skins: null }));

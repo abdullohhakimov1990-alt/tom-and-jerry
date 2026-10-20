@@ -28,7 +28,8 @@ export function fbErr(e) {
 const randPid = () => String(10000000 + Math.floor(Math.random() * 89999999));
 
 export async function createBackend() {
-  if (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey) {
+  // ?offline — sinov uchun brauzer ichidagi rejim
+  if (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && !new URLSearchParams(location.search).has('offline')) {
     try { return await firebaseBackend(FIREBASE_CONFIG); }
     catch (e) { console.error('Firebase ishga tushmadi', e); const b = localBackend(); b.error = 'Firebase ulanmadi: ' + e.message; return b; }
   }

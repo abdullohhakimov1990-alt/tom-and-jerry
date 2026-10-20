@@ -8,6 +8,7 @@ import { createBackend } from './backend.js';
 import { makeStage } from './stage.js';
 import { ui } from './ui.js';
 import { Match } from './match.js';
+import { initOnline } from './online.js';
 import { START_WALLET, CHAR_PRICE, ADMINS, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS } from './catalog.js';
 import * as SND from './audio.js';
 import { isTouch, goLandscape } from './touch.js';
@@ -135,6 +136,7 @@ function enterMenu(acc) {
   ui.screen('menu'); ui.renderTop();
   app.unsubs = [app.backend.watchFriends(f => ui.setFriends(f, null)), app.backend.watchRequests(r => ui.setFriends(null, r)), app.backend.watchGifts(onGifts)];
   app.backend.heartbeat();
+  Promise.resolve(app.backend.makeNet ? app.backend.makeNet() : null).then(n => { app.backend.net = n; initOnline(app); }).catch(e => console.warn('onlayn ulanmadi', e));
   clearInterval(app.hb); app.hb = setInterval(() => app.backend.heartbeat(), 60000);
   SND.playMusic(app.data.equip.music);
 }
@@ -167,19 +169,21 @@ app.selectChar = async kind => {
 };
 
 // ---------------- o'yin ----------------
-app.startMatch = () => {
+app.startMatch = (opts = {}) => {
   if (app.match) return;
   goLandscape();
   SND.initAudio(); SND.setVolumes(app.settings.vol, app.settings.musVol, true); SND.stopMusic();
   ui.close('shop'); ui.close('friends'); ui.close('result');
   $('menu').classList.add('hidden');
   app.stage.show(false);
-  app.match = new Match(app, app.data.char);
+  app.match = new Match(app, opts.role || app.data.char, opts.net);
   app.match.lock();
 };
 app.pause = () => {
   const m = app.match; if (!m || m.paused || m.phase === 'end') return;
-  m.paused = true; ui.open('pause'); SND.setMood('sneak');
+  ui.open('pause');
+  if (m.net) return;               // onlayn o'yinda vaqt to'xtamaydi
+  m.paused = true; SND.setMood('sneak');
 };
 app.resume = () => {
   const m = app.match; if (!m) return;

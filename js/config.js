@@ -11,4 +11,6 @@ export const FIREBASE_CONFIG = {
   storageBucket: "tom-and-jerry-katta-uy.firebasestorage.app",
   messagingSenderId: "832246208606",
   appId: "1:832246208606:web:4a6a81a211fd007588fccf",
+  // Onlayn o'yin (do'st bilan) uchun Realtime Database
+  databaseURL: "https://tom-and-jerry-katta-uy-default-rtdb.europe-west1.firebasedatabase.app",
 };

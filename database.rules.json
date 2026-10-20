@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "invites": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && (auth.uid === $from || auth.uid === $to)"
+        }
+      }
+    },
+    "rooms": {
+      "$room": {
+        ".read": "auth != null && (data.child('host').val() === auth.uid || data.child('guest').val() === auth.uid)",
+        ".write": "auth != null && ((!data.exists() && newData.child('host').val() === auth.uid) || data.child('host').val() === auth.uid || data.child('guest').val() === auth.uid)"
+      }
+    }
+  }
+}

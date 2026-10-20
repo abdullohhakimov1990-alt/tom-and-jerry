@@ -293,7 +293,7 @@ ui.openSettings = function () { ui.close('pause'); ui.open('settings'); };
 
 // ---------------- natija ----------------
 ui.showResult = function (r) {
-  $('resTitle').textContent = r.win ? "G'ALABA!" : "MAG'LUBIYAT";
+  $('resTitle').textContent = (r.win ? "G'ALABA!" : "MAG'LUBIYAT") + (r.online && r.oppNick ? ` (vs ${r.oppNick})` : '');
   $('resTitle').style.color = r.win ? '#ffd23f' : '#ff7b86';
   const t = Math.floor(r.time);
   $('resBody').innerHTML = r.me === 'jerry'
