@@ -73,7 +73,8 @@ service cloud.firestore {
     // Do'stlik so'rovlari: hujjat id = "<kimga>_<kimdan>"
     match /requests/{rid} {
       allow read: if signedIn() && (resource == null || resource.data.to == me() || resource.data.from == me());
-      allow create: if signedIn() && request.resource.data.from == me() && rid == request.resource.data.to + '_' + me();
+      allow create: if signedIn() && request.resource.data.from == me() && rid == request.resource.data.to + '_' + me()
+        && (!('note' in request.resource.data) || (request.resource.data.note is string && request.resource.data.note.size() <= 60));
       allow delete: if signedIn() && (resource.data.to == me() || resource.data.from == me());
     }
   }

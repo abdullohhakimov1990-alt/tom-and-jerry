@@ -83,6 +83,8 @@
   <div class="dr-head"><h3>Do'stlar</h3><button class="x" data-close="friends">✕</button></div>
   <div class="myid">Sizning ID: <b id="frMyId">--------</b> <button id="btnCopyId" class="btn small">Nusxa</button></div>
   <div class="addrow"><input id="frInput" placeholder="Do'stning ID raqami" inputmode="numeric" maxlength="8"><button id="btnAddFriend" class="btn orange">Qo'shish</button></div>
+  <input id="frNote" class="frnote" maxlength="60" placeholder="Izoh (ixtiyoriy): nimaga qo'shyapsiz?">
+  <div class="frchips"><button class="chip" data-note="Salom! Birga o'ynaymiz 🎮">🎮 Birga o'ynaymiz</button><button class="chip" data-note="Donat qilmoqchiman 💎">💎 Donat qilmoqchiman</button><button class="chip" data-note="Do'st bo'laylik 🤝">🤝 Do'st bo'laylik</button></div>
   <div id="frMsg" class="msg"></div>
   <div class="tabs"><button class="tab on" data-ftab="list">Do'stlar <i id="frCount">0</i></button><button class="tab" data-ftab="req">So'rovlar <i id="rqCount">0</i></button></div>
   <div id="frList" class="flist"></div>
@@ -135,7 +137,7 @@
   <h2>O'yin qoidalari</h2>
   <div class="rules-text">
     <p><b>Maqsad.</b> Katta uyda 12 ta xona bor. <b>Jerry</b> bo'lib o'ynasang — 3 daqiqa davomida Tomga 3 marta ushlanmasdan yashab qol. <b>Tom</b> bo'lib o'ynasang — 3 daqiqa ichida Jerryni 3 marta ushla.</p>
-    <p><b>Boshqaruv.</b> Sichqoncha — qarash (Minecraftdagidek, ekranni bir bosing). <kbd>W A S D</kbd> — yurish, <kbd>Shift</kbd> — yugurish (chidamlilik tugaydi), <kbd>Space</kbd> — sakrash, <kbd>C</kbd> — yashirinish, <kbd>1</kbd>-<kbd>7</kbd> — buyumlar, <kbd>V</kbd> — 1-shaxs/3-shaxs ko'rinish, <kbd>M</kbd> — katta xarita, <kbd>Esc</kbd> — pauza. Tom uchun <kbd>Sichqoncha chap</kbd> yoki <kbd>Q</kbd> — sakrab tashlanish. <kbd>E</kbd> — qobiliyat.</p>
+    <p><b>Boshqaruv.</b> Sichqoncha — qarash (Minecraftdagidek, ekranni bir bosing). <kbd>W A S D</kbd> — yurish, <kbd>Shift</kbd> — yugurish (chidamlilik tugaydi), <kbd>Space</kbd> — sakrash, <kbd>C</kbd> — yashirinish, <kbd>1</kbd>-<kbd>7</kbd> — buyumlar, <kbd>V</kbd> — 1-shaxs/3-shaxs ko'rinish, <kbd>M</kbd> — katta xarita, <kbd>Esc</kbd> — pauza. Tom uchun <kbd>Sichqoncha chap</kbd> yoki <kbd>Q</kbd> — sakrab tashlanish. <kbd>E</kbd> — qobiliyat. Do'st bilan o'yinda: <kbd>Enter</kbd> — chat, <kbd>T</kbd> — mikrofon.</p>
     <p><b>Qobiliyatlar (E, bepul, har 18 soniyada).</b> 💣 <b>Jerry — Bomba:</b> tagingga bomba qo'yiladi; Tom yaqinlashsa portlaydi va Tom 3 soniya o'tirib qoladi, boshida qushlar aylanadi. 🪤 <b>Tom — Qopqon:</b> tagingga qopqon qo'yiladi; Jerry bossa 3 soniya ushlanib qoladi. Tom uchun: Jerry shu xonada yoki yonidagi xonada bo'lsa, uning boshi ekranda va xaritada ko'rinadi.</p>
     <p><b>C tugmasi (yashirinish).</b> Bossang, eng yaqin yashirinish joyi yashil nuqtalar bilan ko'rsatiladi. O'sha yerga yetib borishing bilan avtomatik yashirinasan. Yashiringanda yana <kbd>C</kbd> — chiqish. Uyda 47 ta yashirinish joyi bor: qutilar, etiklar, gul tuvaklar, sichqon inlari, choynak, katta pishloq va boshqalar.</p>
     <p><b>Tomning ko'zi</b> (chap yuqorida). <b>Ochiq qizil</b> — Tom seni hozir ko'ryapti. <b>Yopiq</b> — ko'rmayapti. <b>Sariq</b> — qidiryapti. Ko'z ochiq paytda yashirinsang — Tom qayerga kirganingni ko'radi va sudrab chiqaradi (bu ushlanish hisoblanadi).</p>
@@ -176,6 +178,9 @@
     <button id="tPause" class="tbtn small" aria-label="Pauza">II</button>
   </div>
   <div id="oppTag" class="hidden"></div>
+  <div id="netBar" class="hidden"><button id="btnChat" title="Chat (Enter)">💬</button><button id="btnMic" title="Mikrofon (T)">🎤</button><span id="oppVoice" class="hidden">🔊</span></div>
+  <div id="chatBox"></div>
+  <div id="chatBar" class="hidden"><div id="chatQuick"></div><div class="chat-in"><input id="chatInput" maxlength="80" autocomplete="off" placeholder="Xabar yozing... (Enter — yuborish, Esc — yopish)"><button id="btnChatSend" class="btn orange">➤</button></div></div>
   <div id="crosshair" class="hidden"></div>
   <div id="lockHint" class="hidden">Boshqarish uchun ekranni bosing 🖱️</div>
 </div>

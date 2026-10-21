@@ -28,6 +28,7 @@ ui.init = function (a) {
   $('btnRules').onclick = () => ui.open('rules');
   $('btnAdmin').onclick = () => ui.openAdmin();
   $('btnApGift').onclick = ui.adminGift;
+  document.querySelectorAll('[data-note]').forEach(b => b.onclick = () => { $('frNote').value = b.dataset.note; SND.play('click'); });
   $('btnCardAdd').onclick = addCard;
   $('btnApAdd').onclick = () => ui.adminSet($('apAdminPid').value, true);
   for (const id of ['apGiftPid', 'apAdminPid']) $(id).addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
@@ -274,7 +275,8 @@ ui.renderFriends = function () {
   const row = (f, acts) => {
     const on = Date.now() - (f.lastSeen || 0) < ONLINE_MS, recent = Date.now() - (f.lastSeen || 0) < 86400000 * 3;
     const adm = roleBadge(titleOf(f.uid, f.role));
-    return `<div class="frow"><img src="${iconURL[f.icon] || iconURL.j_classic}" alt=""><div class="fi"><div class="fn">${nickHTML(f.nick || '???', f.color)}${adm}</div>
+    const note = f.note ? `<div class="fnote">💬 «${esc(f.note)}»</div>` : '';
+    return `<div class="frow"><img src="${iconURL[f.icon] || iconURL.j_classic}" alt=""><div class="fi"><div class="fn">${nickHTML(f.nick || '???', f.color)}${adm}</div>${note}
       <div class="fs"><span class="dot ${on ? 'on' : recent ? 'recent' : ''}"></span>${acts ? 'ID: ' + esc(f.pid) : ago(f.lastSeen) + ' · ID: ' + esc(f.pid)}</div></div><div class="acts">${acts || `${on ? `<button class="btn small orange" data-inv="${f.uid}" title="O'yinga chaqirish">🎮</button>` : ''}${app.isSuper ? `<button class="btn small gold" data-gf="${f.uid}" title="Sovg'a">🎁</button>` : ''}<button class="btn small" data-rm="${f.uid}" title="O'chirish">✕</button>`}</div></div>`;
   };
   const sorted = friends.slice().sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
@@ -293,9 +295,9 @@ ui.addFriend = async function () {
   const v = $('frInput').value.trim(), m = $('frMsg');
   if (!/^\d{8}$/.test(v)) { m.textContent = 'ID 8 ta raqamdan iborat'; m.className = 'msg bad'; return; }
   try {
-    const r = await app.backend.sendRequest(v);
+    const r = await app.backend.sendRequest(v, $('frNote').value);
     m.textContent = r === 'accepted' ? "U sizga ham so'rov yuborgan edi — endi do'stsiz!" : "So'rov yuborildi! U qabul qilishini kuting."; m.className = 'msg ok';
-    $('frInput').value = ''; SND.play('coin');
+    $('frInput').value = ''; $('frNote').value = ''; SND.play('coin');
   } catch (e) { m.textContent = e.message; m.className = 'msg bad'; SND.play('error'); }
 };
 

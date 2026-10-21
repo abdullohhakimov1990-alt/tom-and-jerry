@@ -386,11 +386,31 @@ body.touch .stam { width: 180px; }
 .title-badge { font-size: 11px; font-weight: 900; padding: 1px 7px; border-radius: 8px; vertical-align: middle; letter-spacing: .5px; white-space: nowrap; -webkit-text-fill-color: currentColor; }
 .title-badge.admin { background: linear-gradient(90deg, #2979ff, #00e5ff); color: #fff; border: 1.5px solid #fff; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
 .title-badge.super { background: linear-gradient(90deg, #ff004c, #ffd700, #b000ff); color: #fff; border: 1.5px solid #fff; text-shadow: 0 1px 2px #000; animation: shine 2.5s linear infinite; background-size: 200% 100%; }
+.frnote { width: 100%; box-sizing: border-box; margin-top: 6px; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; outline: none; font-family: inherit; }
+.frnote:focus { border-color: var(--gold); }
+.frchips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.chip { background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.3); color: #fff; border-radius: 12px; padding: 3px 9px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.chip:hover { background: rgba(255,176,58,.35); }
+.fnote { font-size: 12px; color: #ffe08a; margin-top: 2px; font-style: italic; word-break: break-word; }
 .admin-badge { font-size: 11px; font-weight: 800; background: linear-gradient(90deg, #ffd23f, #ff8a00); color: #3a2400; padding: 1px 7px; border-radius: 8px; vertical-align: middle; -webkit-text-fill-color: #3a2400; }
 
 .inv-ic { width: 90px; height: 90px; border-radius: 16px; }
 .spinner { width: 54px; height: 54px; border-radius: 50%; border: 6px solid rgba(255,255,255,.2); border-top-color: var(--gold); animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* onlayn: chat va mikrofon */
+#netBar { position: absolute; top: 62px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; pointer-events: auto; z-index: 30; }
+#netBar button { width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.85); background: rgba(20,12,30,.65); font-size: 21px; cursor: pointer; position: relative; }
+#netBar button:active { transform: scale(.92); }
+#btnMic { filter: grayscale(1); opacity: .75; } #btnMic::after { content: ''; position: absolute; left: 50%; top: 8px; bottom: 8px; width: 3px; background: #ff4d4d; transform: rotate(45deg); border-radius: 2px; }
+#btnMic.on { filter: none; opacity: 1; background: rgba(40,170,80,.75); box-shadow: 0 0 12px rgba(80,255,130,.8); } #btnMic.on::after { display: none; }
+#oppVoice { font-size: 22px; background: rgba(20,12,30,.65); border-radius: 12px; padding: 2px 8px; animation: jbob .5s ease-in-out infinite; }
+#chatBox { position: absolute; left: 12px; top: 150px; width: min(340px, 42vw); display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
+#chatBox .cm { background: rgba(15,8,25,.7); border-radius: 10px; padding: 4px 10px; font-size: 14px; font-weight: 700; word-break: break-word; transition: opacity .8s; }
+#chatBox .cm.me { background: rgba(40,90,40,.7); } #chatBox .cm.fade { opacity: 0; }
+#chatBar { position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%); width: min(560px, 92vw); pointer-events: auto; z-index: 31; display: flex; flex-direction: column; gap: 6px; }
+#chatQuick { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+.chat-in { display: flex; gap: 6px; } .chat-in input { flex: 1; font-size: 16px; padding: 9px 12px; border-radius: 12px; border: 2px solid var(--gold); background: rgba(0,0,0,.75); color: #fff; outline: none; font-family: inherit; font-weight: 700; }
+body.touch #chatBar { bottom: auto; top: 112px; }
 #oppTag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 15px; background: rgba(15,8,25,.65); padding: 1px 10px; border-radius: 10px; white-space: nowrap; pointer-events: none; }
 
 /* suriladigan panellar (telefonda barmoq bilan) */

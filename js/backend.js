@@ -3,6 +3,8 @@
 import { FIREBASE_CONFIG } from './config.js';
 import { NICK_MIN, NICK_MAX, SUPER_ADMINS, DONATE } from './catalog.js';
 import { firebaseNet, localNet } from './net.js';
+// do'stlik so'roviga ixtiyoriy izoh (60 belgigacha)
+const cleanNote = n => { n = String(n || '').replace(/\s+/g, ' ').trim().slice(0, 60); return n ? { note: n } : {}; };
 
 export const ONLINE_MS = 2.5 * 60 * 1000;
 export function checkNick(n) {
@@ -73,17 +75,17 @@ function localBackend() {
     async saveData(data) { const d = db(); d.users[me.uid] = data; write(d); },
     async updateProfile(p) { const d = db(); Object.assign(d.profiles[me.uid], p); write(d); },
     async heartbeat() { const d = db(); if (d.profiles[me.uid]) { d.profiles[me.uid].lastSeen = Date.now(); write(d); } },
-    async sendRequest(pid) {
+    async sendRequest(pid, note) {
       const d = db(), uid = d.pids[pid.trim()];
       if (!uid) throw new Error('Bunday ID topilmadi');
       if (uid === me.uid) throw new Error("Bu sizning o'z ID'ingiz");
       if ((d.friends[me.uid] || {})[uid]) throw new Error('Bu o\'yinchi allaqachon do\'stingiz');
       if (d.requests[me.uid + '_' + uid]) { await B.accept(uid); return 'accepted'; }
-      d.requests[uid + '_' + me.uid] = { from: me.uid, to: uid, created: Date.now() };
+      d.requests[uid + '_' + me.uid] = Object.assign({ from: me.uid, to: uid, created: Date.now() }, cleanNote(note));
       write(d); return 'sent';
     },
     watchRequests(cb) {
-      const f = () => { const d = db(); cb(Object.values(d.requests).filter(r => r.to === me.uid).map(r => Object.assign({ uid: r.from }, d.profiles[r.from] || {}))); };
+      const f = () => { const d = db(); cb(Object.values(d.requests).filter(r => r.to === me.uid).map(r => Object.assign({ uid: r.from }, d.profiles[r.from] || {}, { note: r.note || '' }))); };
       subs.add(f); f(); return () => subs.delete(f);
     },
     async accept(from) {
@@ -154,7 +156,7 @@ async function firebaseBackend(cfg) {
     async saveData(data) { await setDoc(doc(db, 'users', me.uid), { data, updated: serverTimestamp() }); },
     async updateProfile(p) { await updateDoc(doc(db, 'profiles', me.uid), p); },
     async heartbeat() { try { await updateDoc(doc(db, 'profiles', me.uid), { lastSeen: serverTimestamp() }); } catch (e) { } },
-    async sendRequest(pid) {
+    async sendRequest(pid, note) {
       const s = await getDoc(doc(db, 'pids', pid.trim()));
       if (!s.exists()) throw new Error('Bunday ID topilmadi');
       const uid = s.data().uid;
@@ -162,12 +164,12 @@ async function firebaseBackend(cfg) {
       if ((await getDoc(doc(db, 'users', me.uid, 'friends', uid))).exists()) throw new Error("Bu o'yinchi allaqachon do'stingiz");
       const back = await getDoc(doc(db, 'requests', me.uid + '_' + uid));
       if (back.exists()) { await B.accept(uid); return 'accepted'; }
-      await setDoc(doc(db, 'requests', uid + '_' + me.uid), { from: me.uid, to: uid, created: serverTimestamp() });
+      await setDoc(doc(db, 'requests', uid + '_' + me.uid), Object.assign({ from: me.uid, to: uid, created: serverTimestamp() }, cleanNote(note)));
       return 'sent';
     },
     watchRequests(cb) {
       return onSnapshot(query(collection(db, 'requests'), where('to', '==', me.uid)), async snap => {
-        const list = await Promise.all(snap.docs.map(async d => { const from = d.data().from; const p = await getDoc(doc(db, 'profiles', from)); return Object.assign({ uid: from }, p.exists() ? p.data() : {}); }));
+        const list = await Promise.all(snap.docs.map(async d => { const from = d.data().from; const p = await getDoc(doc(db, 'profiles', from)); return Object.assign({ uid: from }, p.exists() ? p.data() : {}, { note: d.data().note || '' }); }));
         cb(list);
       }, e => console.error("So'rovlar:", fbErr(e)));
     },

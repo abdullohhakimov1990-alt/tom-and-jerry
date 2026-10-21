@@ -10,6 +10,11 @@ import * as PR from './props.js';
 import { TomAI, JerryAI } from './ai.js';
 import { attachTouch, isTouch } from './touch.js';
 import { COLS } from './house.js';
+import { Voice } from './voice.js';
+import { nickHTML } from './ui.js';
+
+const QUICK = ['Salom! 👋', "Yaxshi o'yin! 👍", 'Ushlolmaysan! 😜', 'Qayerdasan? 👀', 'Hahaha 😂', "Yana o'ynaymiz! 🔁"];
+const $ = id => document.getElementById(id);
 
 export const MATCH_TIME = 180, LIVES = 3, HIDE_MAX = 25;
 const SPD = { jerry: { run: 9, sprint: 12.6, jump: 14.4 }, tom: { run: 10.6, sprint: 13.4, jump: 14.9 } };
@@ -81,7 +86,7 @@ export class Match {
       },
       mu: e => { if (e.button === 2) this.cam.fpHold = false; },
       wh: e => { this.cam.dist = clamp(this.cam.dist + Math.sign(e.deltaY) * .12, .55, 1.7); },
-      pl: () => { const locked = document.pointerLockElement === c; hud.lockHint(!locked && !this.paused && this.phase !== 'end'); if (!locked && this.phase === 'play' && !this.paused && !this.app.ignoreUnlock) this.app.pause(); },
+      pl: () => { const locked = document.pointerLockElement === c; hud.lockHint(!locked && !this.paused && this.phase !== 'end' && !this.chatOpen); if (!locked && this.phase === 'play' && !this.paused && !this.app.ignoreUnlock && !this.chatOpen) this.app.pause(); },
       cm: e => e.preventDefault(),
     };
     window.addEventListener('keydown', this.h.kd); window.addEventListener('keyup', this.h.ku);
@@ -112,7 +117,8 @@ export class Match {
   }
   onKey(e, down) {
     const k = e.code;
-    if (this.paused) return;
+    if (this.paused || this.chatOpen) return;   // chat yozilayotganda o'yin tugmalari ishlamaydi
+    if (down && this.net && (k === 'Enter' || k === 'NumpadEnter') && this.phase !== 'end') { e.preventDefault(); this.openChat(); return; }
     this.keys[k] = down;
     if (!down) return;
     if (['Space', 'Tab'].includes(k)) e.preventDefault();
@@ -122,6 +128,7 @@ export class Match {
     else if (k === 'KeyM') { this.bigOn = !this.bigOn; this.toggleBig(); }
     else if (k === 'KeyQ' && this.me === 'tom') this.pounce(this.tom);
     else if (k === 'KeyE') this.useAbility(this.player);
+    else if (k === 'KeyT' && this.net) this.toggleMic();
     else if (/^Digit[1-9]$/.test(k)) this.useItem(+k.slice(5) - 1);
   }
 
@@ -386,6 +393,8 @@ export class Match {
       N.watchRoom(room, r => { if (r && r.left && r.left[this.net.opp]) this.oppLeft(); }),
     ];
     N.armDisconnect(room);
+    this.chatInit();
+    this.voice = new Voice(N, room, this.app.user.uid, this.net.opp, () => this.voiceUI());
     const nick = (this.net.oppInfo || {}).nick || "Do'st";
     hud.say(`Siz ${this.me === 'tom' ? 'TOM' : 'JERRY'} bo'ldingiz! Raqib: ${nick}`, 'gold', 4.5);
   }
@@ -422,6 +431,8 @@ export class Match {
       case 'trapped': if (this.me === 'tom') { SND.play('trap'); hud.toast('Jerry qopqonga tushdi!', 'gold'); } break;
       case 'spike': if (this.me === 'tom') { this.callSpike(); T.slowT = 8; hud.toast('SPIKE seni quvlayapti!', 'red', 1.6); } break;
       case 'end': this.finish(ev.tomWon, true); break;
+      case 'chat': { const oi = this.net.oppInfo || {}; this.addChat(oi.nick || 'Raqib', oi.color, ev.text, false); SND.play('squeak'); break; }
+      case 'rtc': if (this.voice) this.voice.onSignal(ev); break;
     }
   }
   // Jerry o'z kompyuterida ushlanishni hal qiladi (qalqon, daxlsizlik)
@@ -768,6 +779,68 @@ export class Match {
     if (this.bigOn) hud.drawBig(md, this.world.rooms);
   }
 
+  // ---------------- chat va mikrofon (faqat do'st bilan o'yinda) ----------------
+  chatInit() {
+    $('netBar').classList.remove('hidden'); $('chatBox').innerHTML = '';
+    $('btnChat').onclick = () => this.chatOpen ? this.closeChat() : this.openChat();
+    $('btnMic').onclick = () => this.toggleMic();
+    $('btnChatSend').onclick = () => { this.sendChat($('chatInput').value); this.closeChat(); };
+    $('chatInput').onkeydown = e => {
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); this.sendChat(e.target.value); this.closeChat(); }
+      else if (e.key === 'Escape') { e.preventDefault(); this.closeChat(); }
+    };
+    $('chatQuick').innerHTML = QUICK.map((q, i) => `<button class="chip" data-q="${i}">${q}</button>`).join('');
+    $('chatQuick').onclick = e => { const b = e.target.closest('[data-q]'); if (b) { this.sendChat(QUICK[+b.dataset.q]); this.closeChat(); } };
+    this.voiceUI();
+  }
+  openChat() {
+    if (this.chatOpen) return;
+    this.chatOpen = true; this.keys = {};
+    $('chatBar').classList.remove('hidden'); $('chatInput').value = '';
+    if (document.pointerLockElement) document.exitPointerLock();
+    hud.lockHint(false);
+    setTimeout(() => $('chatInput').focus(), 30);
+  }
+  closeChat() {
+    if (!this.chatOpen) return;
+    this.chatOpen = false; $('chatBar').classList.add('hidden'); $('chatInput').blur();
+    if (!isTouch() && this.phase === 'play') this.lock();
+  }
+  sendChat(text) {
+    text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (!text || !this.net) return;
+    const now = performance.now(); if (now - (this.lastChat || 0) < 700) return; this.lastChat = now; // juda tez yozmaslik
+    this.netSend({ type: 'chat', text });
+    this.addChat(this.app.profile.nick, this.app.profile.color, text, true);
+  }
+  addChat(nick, color, text, mine) {
+    const box = $('chatBox'), d = document.createElement('div');
+    d.className = 'cm' + (mine ? ' me' : '');
+    d.innerHTML = nickHTML(nick, color) + ': ';
+    d.appendChild(document.createTextNode(String(text).slice(0, 80)));
+    box.appendChild(d);
+    while (box.children.length > 6) box.firstChild.remove();
+    setTimeout(() => d.classList.add('fade'), 9000); setTimeout(() => d.remove(), 10000);
+  }
+  async toggleMic() {
+    if (!this.voice) return;
+    try {
+      const on = await this.voice.toggleMic();
+      hud.toast(on ? '🎤 Mikrofon yoqildi — raqib sizni eshitadi' : "🎤 Mikrofon o'chirildi", on ? 'green' : '', 1.6);
+      if (this.voice.state !== 'connected') hud.say('Ovozli aloqa ulanmoqda...', '', 2);
+    } catch (e) {
+      SND.play('error');
+      hud.toast(e && e.name === 'NotAllowedError' ? 'Mikrofonga ruxsat berilmadi (brauzer sozlamasidan ruxsat bering)' : (e.message || "Mikrofon ishlamadi"), 'red', 2.4);
+    }
+  }
+  voiceUI() {
+    const v = this.voice;
+    $('btnMic').classList.toggle('on', !!(v && v.on));
+    $('btnMic').title = v && v.on ? "Mikrofon yoqilgan (T — o'chirish)" : 'Mikrofon (T — yoqish)';
+    $('oppVoice').classList.toggle('hidden', !(v && v.speaking));
+  }
+
   // ikki joy bir xil yoki devori umumiy xonadami (hovlida — 24 m ichida)
   nearRoom(a, b) {
     const W = this.world, ra = W.roomAt(a.x, a.z), rb = W.roomAt(b.x, b.z);
@@ -789,6 +862,8 @@ export class Match {
   dispose() {
     const c = gfx.renderer.domElement;
     hud.jerryMark(false);
+    if (this.voice) { this.voice.close(); this.voice = null; }
+    this.chatOpen = false; $('netBar').classList.add('hidden'); $('chatBar').classList.add('hidden'); $('chatBox').innerHTML = ''; $('oppVoice').classList.add('hidden');
     document.getElementById('abil').removeEventListener('pointerdown', this.h.ab);
     if (this.net) { (this.netUn || []).forEach(u => u && u()); this.net.api.leave(this.net.room); const tg = document.getElementById('oppTag'); if (tg) tg.classList.add('hidden'); }
     if (this.touch) this.touch.detach();
