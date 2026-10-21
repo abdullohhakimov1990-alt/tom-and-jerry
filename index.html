@@ -181,12 +181,13 @@
   <!-- telefon boshqaruvi -->
   <div id="oppTag" class="hidden"></div>
   <div id="teamTags" class="hidden"></div>
+  <div id="scoreboard" class="hidden"><div class="sb-head"><b>👥 O'yinchilar</b><button id="sbClose" class="x">✕</button></div><div id="sbBody" class="sb-body"></div><div class="sb-foot">TAB — yopish</div></div>
   <div id="netBar" class="hidden"><button id="btnChat" title="Chat (Enter)">💬</button><button id="btnMic" title="Mikrofon (T)">🎤</button><span id="oppVoice" class="hidden">🔊</span></div>
   <div id="chatBox"></div>
   <div id="chatBar" class="hidden"><div id="chatQuick"></div><div class="chat-in"><input id="chatInput" maxlength="80" autocomplete="off" placeholder="Xabar yozing... (Enter — yuborish, Esc — yopish)"><button id="btnChatSend" class="btn orange">➤</button></div></div>
   <div id="crosshair" class="hidden"></div>
   <div id="lockHint" class="hidden">Ekranni bosing yoki sichqonchani bosib sudrang — atrofga qarash 🖱️</div>
-  <div id="gameKeys" class="keys"><b>W A S D</b> yurish<b>Shift</b> yugurish<b>Space</b> sakrash<b>C</b> yashirinish<b>E</b> qobiliyat<b>1-7</b> buyumlar<b>V</b> ko'rinish<b>M</b> xarita<b>Enter</b> chat<b>T</b> mikrofon</div>
+  <div id="gameKeys" class="keys"><b>W A S D</b> yurish<b>Shift</b> yugurish<b>Space</b> sakrash<b>C</b> yashirinish<b>E</b> qobiliyat<b>1-7</b> buyumlar<b>V</b> ko'rinish<b>M</b> xarita<b>Enter</b> chat<b>T</b> mikrofon<b>TAB</b> o'yinchilar</div>
 </div>
 <div id="countdown" class="hidden"></div>
 <div id="rotate"><div class="rot-ic">📱</div><div>Telefonni <b>yotqizing</b> (gorizontal)</div><small>O'yin faqat yotiq ekranda ishlaydi</small></div>
@@ -269,12 +270,20 @@
     <button id="tAct" class="tbtn hidden" aria-label="Tashlanish">🐾<small>Tashlan</small></button>
     <button id="tSprint" class="tbtn small" aria-label="Yugurish">🏃</button>
     <button id="tMap" class="tbtn small" aria-label="Xarita">🗺</button>
+    <button id="tList" class="tbtn small" aria-label="O'yinchilar">👤</button>
+    <button id="tView" class="tbtn small" aria-label="1/3-shaxs">👁</button>
     <button id="tPause" class="tbtn small" aria-label="Pauza">II</button>
   </div>
 <div id="mapPick" class="modal hidden"><div class="mbox wide">
   <button class="x" data-close="mapPick">✕</button>
   <h2>🗺 Xarita tanlash</h2>
   <div id="mapCards" class="map-cards"></div>
+</div></div>
+<div id="charPick" class="modal hidden"><div class="mbox">
+  <button class="x" data-close="charPick">✕</button>
+  <h2>Qahramonni tanlang</h2>
+  <div class="sub">Hamma bir xil qahramonni tanlasa, o'yin boshlanganda rollar tasodifiy taqsimlanadi.</div>
+  <div id="charPickCards" class="map-cards"></div>
 </div></div>
 <div id="mapLoading" class="hidden"><div class="spinner"></div><b>Uy qurilmoqda...</b></div>
 <!-- ============ HUB ============ -->

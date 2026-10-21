@@ -42,13 +42,17 @@ export function attachTouch(m) {
     act: e => { e.preventDefault(); if (m.phase === 'play' && m.me === 'tom') m.pounce(m.tom); },
     sprint: e => { e.preventDefault(); T.sprintLock = !T.sprintLock; T.sprint = T.sprintLock; $('tSprint').classList.toggle('on', T.sprintLock); },
     map: e => { e.preventDefault(); m.bigOn = !m.bigOn; m.toggleBig(); },
+    list: e => { e.preventDefault(); if (m.toggleScore) m.toggleScore(); },
+    view: e => { e.preventDefault(); if (m.cam) m.cam.fp = !m.cam.fp; },
     pause: e => { e.preventDefault(); m.app.pause(); },
   };
   joy.addEventListener('pointerdown', H.jd); joy.addEventListener('pointermove', H.jm); joy.addEventListener('pointerup', H.ju); joy.addEventListener('pointercancel', H.ju);
   look.addEventListener('pointerdown', H.ld); look.addEventListener('pointermove', H.lm); look.addEventListener('pointerup', H.lu); look.addEventListener('pointercancel', H.lu);
   $('tJump').addEventListener('pointerdown', H.jump); $('tHide').addEventListener('pointerdown', H.hide); $('tAct').addEventListener('pointerdown', H.act);
   $('tSprint').addEventListener('pointerdown', H.sprint); $('tMap').addEventListener('pointerdown', H.map); $('tPause').addEventListener('pointerdown', H.pause);
+  $('tList').addEventListener('pointerdown', H.list); $('tView').addEventListener('pointerdown', H.view);
   T.detach = () => {
+    $('tList').removeEventListener('pointerdown', H.list); $('tView').removeEventListener('pointerdown', H.view);
     joy.removeEventListener('pointerdown', H.jd); joy.removeEventListener('pointermove', H.jm); joy.removeEventListener('pointerup', H.ju); joy.removeEventListener('pointercancel', H.ju);
     look.removeEventListener('pointerdown', H.ld); look.removeEventListener('pointermove', H.lm); look.removeEventListener('pointerup', H.lu); look.removeEventListener('pointercancel', H.lu);
     $('tJump').removeEventListener('pointerdown', H.jump); $('tHide').removeEventListener('pointerdown', H.hide); $('tAct').removeEventListener('pointerdown', H.act);

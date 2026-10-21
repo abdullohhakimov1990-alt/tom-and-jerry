@@ -9,7 +9,7 @@ import { ITEMS, ABIL } from './catalog.js';
 import * as PR from './props.js';
 import { TomAI, JerryAI } from './ai.js';
 import { attachTouch, isTouch } from './touch.js';
-import { COLS } from './house.js';
+import { COLS, pickRoom } from './house.js';
 import { Voice } from './voice.js';
 import { nickHTML } from './ui.js';
 
@@ -65,11 +65,12 @@ export class Match {
   }
   spawn() {
     const rooms = this.world.rooms, J = this.jerry, T = this.tom;
-    const lr = rooms.find(r => r.key === 'living');
+    const lr = pickRoom(rooms, ['living', 'tea_hall', 'bank_lounge']);
     const jp = this.navJ.nearestFree(lr.ox + 6, lr.oz + 13);
     J.p.set(jp[0], 0, jp[1]); J.yaw = Math.PI / 2;
-    const far = ['laundry', 'storage', 'garden', 'bedroom'][this.net ? this.net.seed % 4 : Math.floor(Math.random() * 4)];
-    const tr = rooms.find(r => r.key === far) || rooms[rooms.length - 1];
+    const farKeys = rooms.map(r => r.key).filter(k => ['laundry', 'storage', 'garden', 'bedroom', 'tea_store', 'tea_garden', 'warehouse', 'bank_vault'].includes(k));
+    const far = farKeys.length ? farKeys[(this.net ? this.net.seed : Math.floor(Math.random() * 1e6)) % farKeys.length] : null;
+    const tr = (far && rooms.filter(r => r.key === far).sort((a, b) => Math.hypot(b.ox - lr.ox, b.oz - lr.oz) - Math.hypot(a.ox - lr.ox, a.oz - lr.oz))[0]) || rooms[rooms.length - 1];
     const tp = this.navT.nearestFree(tr.ox + 13, tr.oz + 13, 12);
     T.p.set(tp[0], 0, tp[1]);
   }
@@ -121,6 +122,7 @@ export class Match {
   onKey(e, down) {
     const k = e.code;
     if (this.paused || this.chatOpen) return;   // chat yozilayotganda o'yin tugmalari ishlamaydi
+    if (k === 'Tab') { e.preventDefault(); if (down && !e.repeat) this.toggleScore(); return; }
     if (down && this.net && (k === 'Enter' || k === 'NumpadEnter') && this.phase !== 'end') { e.preventDefault(); this.openChat(); return; }
     this.keys[k] = down;
     if (!down) return;
@@ -710,6 +712,7 @@ export class Match {
     if (this.me === 'tom') T.model.root.visible = !this.isFP();
     this.camera(dt);
     this.updateHud();
+    if (this.scoreOn) { this.scoreT = (this.scoreT || 0) - dt; if (this.scoreT <= 0) { this.scoreT = .5; this.renderScore(); } }
     for (const a of this.world.anim) a(this.time + 100);
     updateGfx(dt, P.p, this.time + this.introT);
   }
@@ -794,6 +797,26 @@ export class Match {
     if (this.bigOn) hud.drawBig(md, this.world.rooms);
   }
 
+  // ---------------- o'yinchilar ro'yxati (TAB / 👤) ----------------
+  toggleScore(on) {
+    this.scoreOn = on === undefined ? !this.scoreOn : on;
+    $('scoreboard').classList.toggle('hidden', !this.scoreOn);
+    $('sbClose').onclick = () => this.toggleScore(false);
+    if (this.scoreOn) this.renderScore();
+  }
+  scoreRows() {
+    const a = this.app, mine = { nick: a.profile.nick, color: a.profile.color, me: true };
+    const opp = this.net ? { nick: (this.net.oppInfo || {}).nick || 'Raqib', color: (this.net.oppInfo || {}).color, title: (this.net.oppInfo || {}).title } : { nick: '🤖 Kompyuter' };
+    const J = this.me === 'jerry' ? mine : opp, T = this.me === 'tom' ? mine : opp;
+    return { tom: [Object.assign({ st: `ushladi: ${this.catches}` }, T)], jerry: [Object.assign({ st: `❤ ${this.lives} · 🧀 ${this.cheeseN}` }, J)] };
+  }
+  renderScore() {
+    const R = this.scoreRows(), esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    const col = (k, title) => `<div class="sb-col ${k}"><h4>${title} (${R[k].filter(r => !r.out).length}/${R[k].length})</h4>${R[k].map(r =>
+      `<div class="sb-row ${r.me ? 'me' : ''} ${r.out ? 'out' : ''}">${nickHTML(r.nick || '???', r.color)}${r.title === 'super' ? ' 👑' : r.title === 'admin' ? ' ⭐' : ''}${r.me ? ' <small>(siz)</small>' : ''}<span class="st">${esc(r.st)}</span></div>`).join('')}</div>`;
+    $('sbBody').innerHTML = col('tom', '🐱 Tomlar') + col('jerry', '🐭 Jerrylar');
+  }
+
   // ---------------- chat va mikrofon (faqat do'st bilan o'yinda) ----------------
   chatInit() {
     $('netBar').classList.remove('hidden'); $('chatBox').innerHTML = '';
@@ -876,7 +899,7 @@ export class Match {
 
   dispose() {
     const c = gfx.renderer.domElement;
-    hud.jerryMark(false);
+    hud.jerryMark(false); this.toggleScore(false);
     if (this.voice && !(this.net && this.net.voice)) this.voice.close();
     this.voice = null;
     this.chatOpen = false; $('netBar').classList.add('hidden'); $('chatBar').classList.add('hidden'); $('chatBox').innerHTML = ''; $('oppVoice').classList.add('hidden');

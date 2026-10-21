@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import * as TX from './textures.js';
 import { B, M, addGeo, addCol, frame, finalize, resetBuilder } from './builder.js';
 import { DESIGNS } from './rooms.js';
+import { THEME_STYLE, THEME_DESIGNS } from './themes.js';
 import * as FN from './furniture.js';
 import { gfx } from './gfx.js';
 
@@ -14,16 +15,17 @@ export const origin = (c, r) => [WALL + c * (ROOM + WALL), WALL + r * (ROOM + WA
 // ---------------- XARITALAR ----------------
 // noDoor — eshiksiz devorlar (u yerda faqat sichqon teshigi), holes — sichqon teshiklari
 export const MAPS = {
-  small: { name: 'Kichik uy', desc: "9 xona · 1 Tom va 1 Jerry", rooms: 9,
-    grid: [['bedroom', 'kids', 'bath'], ['library', 'living', 'kitchen'], ['garden', 'entry', 'storage']],
+  small: { name: 'Choyxona', desc: "9 xona · 1 Tom va 1 Jerry · qozonlar, sandiqlar, so'ri", rooms: 9,
+    grid: [['tea_store', 'tea_kitchen', 'tea_garden'], ['tea_vip', 'tea_hall', 'tea_kitchen'], ['tea_garden', 'entry', 'tea_store']],
     noDoor: ['1,0|2,0', '0,1|0,2'] },
   big: { name: 'Katta uy', desc: "12 xona · 1 Tom va 1 Jerry", rooms: 12,
     grid: [['bedroom', 'kids', 'bath', 'laundry'], ['library', 'living', 'dining', 'kitchen'], ['garden', 'entry', 'study', 'storage']],
     noDoor: ['1,0|2,0', '3,0|3,1', '2,2|3,2', '0,1|0,2'],
     holes: { '1,0|2,0': [13], '3,0|3,1': [13], '2,2|3,2': [13], '0,1|0,2': [13], '0,0|0,1': [8], '1,1|2,1': [8], '1,2|2,2': [18], '2,1|3,1': [18], '1,1|1,2': [18], '2,0|2,1': [18] } },
-  huge: { name: 'Ulkan uy', desc: "20 xona · 4 Tom va 6 Jerry", rooms: 20, team: { tom: 4, jerry: 6 },
-    grid: [['bedroom', 'kids', 'bath', 'laundry', 'bedroom'], ['library', 'living', 'dining', 'kitchen', 'study'], ['garden', 'kids', 'living', 'dining', 'storage'], ['study', 'library', 'entry', 'garden', 'laundry']],
-    noDoor: ['1,0|2,0', '4,0|4,1', '0,2|0,3', '3,2|4,2', '2,1|2,2'] },
+  huge: { name: 'Bank va Ombor', desc: "20 xona · 4 Tom va 6 Jerry · seyflar, shkaflar, ombor javonlari", rooms: 20, team: { tom: 4, jerry: 6 },
+    grid: [['bank_vault', 'bank_office', 'warehouse', 'bank_office', 'bank_vault'], ['warehouse', 'bank_hall', 'bank_lounge', 'bank_hall', 'warehouse'],
+      ['bank_office', 'warehouse', 'bank_hall', 'warehouse', 'warehouse'], ['warehouse', 'tea_kitchen', 'entry', 'bank_lounge', 'bank_office']],
+    noDoor: ['1,0|2,0', '4,0|4,1', '0,2|0,3', '3,2|4,2'] },
 };
 export let MAP = 'big', COLS = 4, ROWS = 3, SX = 0, SZ = 0, BOUNDS = null, GRID = MAPS.big.grid;
 let NO_DOOR = new Set(), HOLES = {};
@@ -61,6 +63,9 @@ export const STYLE = {
   study: { name: 'Ish xonasi', fl: () => TX.planks('#5f3e26', '#4a2f1d'), su: 6, wall: ['#c9d6e3', '#b9c9da', 'checks'], wains: '#3c2a1a', trim: '#2b1d10', lamp: '#ffd9a6', map: '#8fa8c8' },
   storage: { name: 'Omborxona', fl: () => TX.concrete(), su: 8, wall: ['#d7cfc0', '#cbc2b1', 'checks'], wains: null, trim: '#8d8170', lamp: '#fff2d0', map: '#b8a888' },
 };
+Object.assign(STYLE, THEME_STYLE); Object.assign(DESIGNS, THEME_DESIGNS);
+// menyu sahnasi va o'yin boshlanadigan xona (har xaritada bor bo'lganini olamiz)
+export const pickRoom = (rooms, keys) => { for (const k of keys) { const r = rooms.find(R => R.key === k); if (r) return r; } return rooms[Math.floor(rooms.length / 2)]; };
 // tashqi devorlardagi derazalar (xona:tomon)
 const WIN = {
   'bedroom:N': [13], 'bedroom:W': [], 'kids:N': [13], 'bath:N': [{ c: 13, sill: 5.6, h: 5 }], 'laundry:N': [], 'laundry:E': [13],

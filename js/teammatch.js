@@ -73,8 +73,9 @@ export class TeamMatch extends Match {
   }
   teamSpawn() {
     const rooms = this.world.rooms;
-    const jr = rooms.filter(r => ['living', 'kids', 'dining', 'library'].includes(r.key));
-    const tr = rooms.filter(r => ['laundry', 'storage', 'bedroom', 'garden', 'study'].includes(r.key));
+    let jr = rooms.filter(r => ['living', 'kids', 'dining', 'library', 'bank_hall', 'bank_lounge', 'tea_hall', 'tea_vip'].includes(r.key));
+    let tr = rooms.filter(r => ['laundry', 'storage', 'bedroom', 'garden', 'study', 'warehouse', 'bank_vault', 'tea_store'].includes(r.key));
+    if (!jr.length) jr = rooms; if (!tr.length) tr = rooms;
     this.jerries.forEach((J, i) => { const R = jr[i % jr.length], c = this.navJ.nearestFree(R.ox + 6 + Math.random() * 14, R.oz + 6 + Math.random() * 14, 12); if (c) J.p.set(c[0], 0, c[1]); J.yaw = Math.random() * 6.28; });
     this.toms.forEach((T, i) => { const R = tr[(i * 2 + 1) % tr.length], c = this.navT.nearestFree(R.ox + 13, R.oz + 13, 12); if (c) T.p.set(c[0], 0, c[1]); });
     this.cam.yaw = this.player.yaw;
@@ -123,6 +124,7 @@ export class TeamMatch extends Match {
     }
     J.lives--; T.celebrate = 1.4; if (T.bot) T.bot.ai.celebrate(1.6);
     if (T === this.player) this.catches++;
+    T.catchN = (T.catchN || 0) + 1;
     PR.poof(J.p.clone().setY(.8), '#ffffff', 18, 1);
     if (this.near(J.p.x, J.p.z, 30)) SND.play('caught');
     if (J === this.player) { this.app.shake(.6); hud.flashRed(1.3); hud.toast(J.lives > 0 ? `USHLANDING! (${J.lives} jon qoldi)` : 'USHLANDING! Siz chiqib ketdingiz', 'red', 1.8); }
@@ -272,6 +274,11 @@ export class TeamMatch extends Match {
       out.push({ x: e.p.x, z: e.p.z, kind: e.kind, nick: e === P && !this.spectating ? '' : (e.nick || ''), me: e === P, mate, faded: !!e.hidden });
     }
     return out;
+  }
+  scoreRows() {
+    const a = this.app, row = e => ({ nick: e.isMe ? a.profile.nick : e.nick, color: e.isMe ? a.profile.color : 'white', title: e.isMe ? (a.isSuper ? 'super' : a.isAdmin ? 'admin' : '') : '', me: !!e.isMe, out: !!e.out,
+      st: e.kind === 'tom' ? `ushladi: ${e.catchN || 0}` : (e.out ? 'chiqdi' : `❤ ${e.lives}${e.hidden ? ' · yashirin' : ''}`) });
+    return { tom: this.toms.map(row), jerry: this.jerries.map(row) };
   }
   finish(tomWon, fromNet) {
     super.finish(tomWon, fromNet);

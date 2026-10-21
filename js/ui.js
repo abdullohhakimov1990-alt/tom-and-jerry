@@ -30,6 +30,12 @@ ui.init = function (a) {
   $('btnApGift').onclick = ui.adminGift;
   $('btnHub').onclick = () => { SND.play('click'); app.enterHub(); };
   $('btnMap').onclick = () => { SND.play('click'); ui.openMaps(); };
+  // guruhda o'zingizning qahramoningizni bossangiz — tanlash oynasi
+  $('game').addEventListener('pointerdown', e => {
+    if (!app.party || app.match || app.hub || $('menu').classList.contains('hidden')) return;
+    const [x, y] = app.stage.screenPos(app.data.char);
+    if (Math.abs(e.clientX - x) < 90 && e.clientY < y + 20 && e.clientY > y - 260) ui.openCharPick();
+  });
   $('btnApWipe').onclick = ui.adminWipe; $('btnApWipeAll').onclick = ui.adminWipeAll;
   $('apWipePid').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
   document.querySelectorAll('[data-note]').forEach(b => b.onclick = () => { $('frNote').value = b.dataset.note; SND.play('click'); });
@@ -110,12 +116,14 @@ ui.renderTop = function () {
 };
 ui.renderCards = function () {
   const d = app.data;
-  $('charCards').innerHTML = ['jerry', 'tom'].map(k => {
+  // guruhda: faqat sizning qahramoningiz turadi — ustiga bosib almashtirasiz (Brawl Stars kabi)
+  const keys = app.party ? [d.char] : ['jerry', 'tom'];
+  $('charCards').innerHTML = keys.map(k => {
     const sel = d.char === k, set = setById(d.equip.skin[k]);
     return `<div class="ccard ${sel ? 'sel' : ''}" data-char="${k}"><h4>${k === 'tom' ? 'Tom' : 'Jerry'}</h4><div class="skin">${set.name} skin</div>
-      <div class="st">${sel ? '✔ Tanlangan' : `Tanlash — ${CHAR_PRICE[k]} ${curIco('gold')}`}</div></div>`;
+      <div class="st">${app.party ? '🔄 Bosib almashtiring' : sel ? '✔ Tanlangan' : `Tanlash — ${CHAR_PRICE[k]} ${curIco('gold')}`}</div></div>`;
   }).join('');
-  document.querySelectorAll('.ccard').forEach(c => c.onclick = () => app.selectChar(c.dataset.char));
+  document.querySelectorAll('.ccard').forEach(c => c.onclick = () => app.party ? ui.openCharPick() : app.selectChar(c.dataset.char));
   ui.placeCards();
 };
 ui.placeCards = function () {
@@ -372,12 +380,24 @@ ui.openGift = function (f) {
   };
 };
 
+// ---------------- qahramon tanlash (guruhda) ----------------
+ui.openCharPick = function () {
+  const d = app.data;
+  $('charPickCards').innerHTML = ['jerry', 'tom'].map(k => {
+    const sel = d.char === k, set = setById(d.equip.skin[k]);
+    return `<div class="map-card ${sel ? 'on' : ''}" data-pick="${k}"><div class="cp-ic">${k === 'tom' ? '🐱' : '🐭'}</div><b>${k === 'tom' ? 'Tom' : 'Jerry'}</b><div class="d">${set.name} skin</div>
+      <div class="tm">${sel ? '✓ Tanlangan' : app.isSuper ? 'Tanlash' : `Tanlash — ${CHAR_PRICE[k]} oltin`}</div></div>`;
+  }).join('');
+  $('charPickCards').querySelectorAll('[data-pick]').forEach(c => c.onclick = async () => { await app.selectChar(c.dataset.pick); ui.close('charPick'); ui.renderTop(); });
+  ui.open('charPick'); SND.play('click');
+};
+
 // ---------------- xarita tanlash ----------------
 ui.openMaps = function () {
   const cur = app.curMap();
   $('mapCards').innerHTML = Object.entries(app.maps).map(([id, m]) => {
     const cols = m.grid[0].length;
-    const cells = m.grid.flat().map(k => `<i style="background:${({ bedroom: '#e8a0bd', kids: '#ffe066', bath: '#8ecdf0', laundry: '#b0c4cc', library: '#7fa86f', living: '#e0b878', dining: '#e7a56f', kitchen: '#86d0b4', garden: '#9ccc65', entry: '#9fb6d8', study: '#8fa8c8', storage: '#b8a888' })[k] || '#999'}"></i>`).join('');
+    const cells = m.grid.flat().map(k => `<i style="background:${(app.styles[k] || {}).map || '#999'}" title="${(app.styles[k] || {}).name || ''}"></i>`).join('');
     return `<div class="map-card ${id === cur ? 'on' : ''}" data-map="${id}"><div class="mp" style="grid-template-columns:repeat(${cols},18px)">${cells}</div>
       <b>${m.name}</b><div class="d">${m.desc}</div>${m.team ? `<div class="tm">🐱×${m.team.tom} vs 🐭×${m.team.jerry} — jamoaviy</div>` : ''}${id === cur ? '<div class="tm" style="color:#7dffa8">✓ Tanlangan</div>' : ''}</div>`;
   }).join('');

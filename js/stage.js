@@ -2,14 +2,16 @@
 import * as THREE from 'three';
 import { gfx, updateGfx, tuneEnv } from './gfx.js';
 import { makeCharacter } from './models.js';
+import { pickRoom } from './house.js';
 
 export function makeStage(app) {
-  const R = app.world.rooms.find(r => r.key === 'kids');
+  const R = pickRoom(app.world.rooms, ['kids', 'tea_hall', 'bank_lounge', 'living']);
   const pos = { jerry: new THREE.Vector3(R.ox + 10.6, 0, R.oz + 15.8), tom: new THREE.Vector3(R.ox + 15.4, 0, R.oz + 15.2) };
   const models = { jerry: null, tom: null }, sets = { jerry: null, tom: null };
   // guruhdagi do'st (PUBG kabi — yoningizda turadi)
-  const fpos = new THREE.Vector3(R.ox + 13, 0, R.oz + 12.6);
-  let friend = null, friendKey = '';
+  // guruhda: siz chapda (tanlagan qahramoningiz), do'stingiz o'ngda turadi
+  const fpos = new THREE.Vector3(R.ox + 15.4, 0, R.oz + 15.2), mePos = new THREE.Vector3(R.ox + 10.6, 0, R.oz + 15.8);
+  let friend = null, friendKey = '', partyOn = false;
   const rings = {};
   for (const k of ['jerry', 'tom']) {
     const s = k === 'jerry' ? 1.1 : 1.9;
@@ -32,6 +34,7 @@ export function makeStage(app) {
       gfx.scene.add(m.root); tuneEnv(m.root); models[kind] = m; sets[kind] = setId;
       m.root.visible = S.visible;
     },
+    setParty(on) { partyOn = !!on; },
     show(on) { S.visible = on; if (friend) friend.root.visible = on; for (const k in models) if (models[k]) models[k].root.visible = on; for (const k in rings) rings[k].visible = on; },
     shop(on) { shopTarget = on ? 1 : 0; },
     update(dt, time) {
@@ -40,6 +43,9 @@ export function makeStage(app) {
       for (const k of ['jerry', 'tom']) {
         const m = models[k]; if (!m) continue;
         const isSel = k === sel;
+        // guruhda faqat tanlangan qahramon turadi
+        m.root.visible = S.visible && (!partyOn || isSel);
+        m.root.position.copy(partyOn && isSel ? mePos : pos[k]); rings[k].position.copy(m.root.position); rings[k].visible = m.root.visible;
         let mode = 'idle';
         if (isSel) mode = waveT > 0 ? 'celebrate' : (Math.sin(t * .7) > .2 ? 'wave' : 'idle');
         m.update(dt, mode);
@@ -74,7 +80,8 @@ export function makeStage(app) {
     },
     // HTML kartalar uchun ekrandagi joy
     screenPos(kind) {
-      const v = pos[kind].clone(); v.y = -.2; v.project(gfx.camera);
+      const sel = app.data ? app.data.char : 'jerry';
+      const v = (partyOn && kind === sel ? mePos : pos[kind]).clone(); v.y = -.2; v.project(gfx.camera);
       return [(v.x * .5 + .5) * window.innerWidth, (-v.y * .5 + .5) * window.innerHeight];
     },
   };

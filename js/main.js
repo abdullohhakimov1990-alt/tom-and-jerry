@@ -1,6 +1,6 @@
 // Ishga tushirish: grafika, uy, akkaunt, menyu va o'yin tsikli.
 import { initGfx, gfx, render, tuneEnv, detectQuality, adaptResolution } from './gfx.js';
-import { buildHouse, setMap, MAPS, MAP } from './house.js';
+import { buildHouse, setMap, MAPS, MAP, STYLE } from './house.js';
 import { NavGrid } from './nav.js';
 import { initHud } from './hud.js';
 import { buildIcons, doneIcons } from './icons.js';
@@ -240,7 +240,7 @@ app.setMap = async id => {
   ui.renderTop(); ov.classList.add('hidden');
   ui.toast(`🗺 ${MAPS[id].name} — ${MAPS[id].desc}`);
 };
-app.maps = MAPS; app.curMap = () => MAP;
+app.maps = MAPS; app.curMap = () => MAP; app.styles = STYLE;
 
 // ---------------- HUB (onlayn o'yinchilar birga) ----------------
 app.enterHub = () => {

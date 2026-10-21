@@ -29,7 +29,7 @@ export class Hub {
     if (isTouch()) {
       attachTouch(this);
       // telefonda: "Yashirin" o'rniga chat, xarita kerak emas
-      this.tHideHTML = $('tHide').innerHTML; $('tHide').innerHTML = '💬<small>Chat</small>'; $('tMap').classList.add('hidden'); $('tPause').classList.add('hidden');
+      this.tHideHTML = $('tHide').innerHTML; $('tHide').innerHTML = '💬<small>Chat</small>'; $('tMap').classList.add('hidden'); $('tPause').classList.add('hidden'); $('tList').classList.add('hidden'); $('tView').classList.add('hidden');
     }
     this.ui();
     this.join();
@@ -40,7 +40,7 @@ export class Hub {
     return { kind, model, p: new THREE.Vector3(), v: new THREE.Vector3(), r: kind === 'jerry' ? .36 : .85, h: DIM[kind].h, step: kind === 'jerry' ? .5 : .65, onGround: true, yaw: 0, stam: 1 };
   }
   spawn() {
-    const R = this.world.rooms.find(r => r.key === 'living') || this.world.rooms[0];
+    const R = this.world.rooms.find(r => r.key === 'living') || this.world.rooms.find(r => r.key === 'tea_hall' || r.key === 'bank_lounge') || this.world.rooms[0];
     const nav = this.app.navT; // ochiq joy (stol/karavot tagida emas)
     const c = nav.nearestFree(R.ox + 6 + Math.random() * 14, R.oz + 6 + Math.random() * 14, 12) || [R.ox + 13, R.oz + 13];
     this.P.p.set(c[0], 0, c[1]); this.P.yaw = Math.random() * 6.28; this.cam.yaw = this.P.yaw;
@@ -289,7 +289,7 @@ export class Hub {
     Promise.resolve(this.net.hubLeave()).catch(() => { });
     for (const u of [...this.others.keys()]) this.removeOther(u);
     try { if (this.track) this.track.stop(); } catch (e) { }
-    if (this.touch) { this.touch.detach(); $('tHide').innerHTML = this.tHideHTML; $('tMap').classList.remove('hidden'); $('tPause').classList.remove('hidden'); }
+    if (this.touch) { this.touch.detach(); $('tHide').innerHTML = this.tHideHTML; $('tMap').classList.remove('hidden'); $('tPause').classList.remove('hidden'); $('tList').classList.remove('hidden'); $('tView').classList.remove('hidden'); }
     window.removeEventListener('keydown', this.h.kd); window.removeEventListener('keyup', this.h.ku);
     window.removeEventListener('mousemove', this.h.mm); c.removeEventListener('mousedown', this.h.md);
     window.removeEventListener('mousemove', this.h.dm); window.removeEventListener('mouseup', this.h.du);

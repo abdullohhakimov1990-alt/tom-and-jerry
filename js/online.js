@@ -100,6 +100,7 @@ export function initOnline(app) {
     // menyuda tanlangan personaj yoki skin o'zgarsa, do'stga ko'rinadi
     P.sync = setInterval(() => { const mi = myInfo(), k = JSON.stringify(mi); if (k !== P.mine) { P.mine = k; net.updateRoom(room, { ['players/' + app.user.uid]: mi }); } }, 1500);
     $('menuSocial').classList.add('party');
+    app.stage.setParty(true); ui.renderTop();
     partyUI();
   }
   function leaveParty(silent) {
@@ -108,7 +109,7 @@ export function initOnline(app) {
     clearInterval(P.sync); P.unEv && P.unEv(); P.unRoom && P.unRoom();
     if (P.voice) P.voice.close();
     Promise.resolve(net.updateRoom(P.room, { ['left/' + app.user.uid]: true, status: 'closed' })).catch(() => { });
-    app.stage.setFriend(null);
+    app.stage.setFriend(null); app.stage.setParty(false); ui.renderTop();
     $('menuSocial').classList.remove('party'); $('partyTag').classList.add('hidden');
     partyUI();
   }
@@ -118,8 +119,11 @@ export function initOnline(app) {
   app.partyPlay = async () => {
     const P = app.party; if (!P || app.match) return;
     if (!P.info) { ui.toast("Do'stingiz hali ulanmoqda...", true); return; }
-    const meTom = Math.random() < .5;
+    // har kim o'zi tanlagan qahramon; ikkalasi bir xil tanlasa — tasodifiy
+    const mine = app.data.char, his = P.info.kind || 'jerry';
+    const meTom = mine !== his ? mine === 'tom' : Math.random() < .5;
     const roles = { [app.user.uid]: meTom ? 'tom' : 'jerry', [P.opp]: meTom ? 'jerry' : 'tom' };
+    if (mine === his) ui.toast("Ikkalangiz bir xil qahramon tanladingiz — rollar tasodifiy!");
     await net.updateRoom(P.room, { status: 'play', roles, map: app.curMap(), startAt: net.now() + 5000, seed: Math.floor(Math.random() * 1e6), left: null, p: null });
   };
   async function start(room, r) {
@@ -129,7 +133,7 @@ export function initOnline(app) {
     app.startMatch({ role: r.roles[me], net: { api: net, room, opp: P.opp, startAt: r.startAt, seed: r.seed || 1, oppInfo: P.info || {}, voice: P.voice, party: true } });
   }
   // o'yindan qaytgach guruh oynasini yangilash
-  app.partyBack = () => { if (app.party) { app.party.voice.onChange = () => partyUI(); app.stage.setFriend(app.party.info); partyUI(); } };
+  app.partyBack = () => { if (app.party) { app.party.voice.onChange = () => partyUI(); app.stage.setFriend(app.party.info); app.stage.setParty(true); partyUI(); } };
 
   // ---------------- menyu: chat va mikrofon ----------------
   function partyUI() {

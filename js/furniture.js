@@ -629,10 +629,12 @@ export function hide(F, type, x = 0, z = 0, face = 0) {
   const reach = info.r + 1.0;
   if (type !== 'mouse') {
     const r = info.r * .85;
-    B.colliders.push({ minX: cx - r, maxX: cx + r, minY: 0, maxY: type === 'umbrella' ? 6 : 3, minZ: cz - r, maxZ: cz + r, tag: 'hide' });
+    B.colliders.push({ minX: cx - r, maxX: cx + r, minY: 0, maxY: type === 'umbrella' || info.tall ? 6 : 3, minZ: cz - r, maxZ: cz + r, tag: 'hide' });
   }
   const h = { id: B.hides.length, type, name: info.name, x: cx, z: cz, ax: cx + dx * reach, az: cz + dz * reach, dir: ang, room: B.room, group: g, inner, wob: 0 };
   B.hides.push(h);
   return h;
 }
 export const HIDE_NAMES = HIDE_INFO;
+// yangi xaritalar o'z yashirinish joylarini qo'shadi (themes.js)
+export function addHideType(type, info, build) { HIDE_INFO[type] = info; HB[type] = build; }
