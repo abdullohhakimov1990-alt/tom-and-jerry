@@ -1,4 +1,4 @@
-// Katta uy: 12 xona (4x3), devorlar, eshiklar, sichqon teshiklari, derazalar, pol/shift, tashqi hovli.
+// Uy: xaritaga qarab 9 (3x3), 12 (4x3) yoki 20 (5x4) xona — devorlar, eshiklar, sichqon teshiklari, derazalar, hovli.
 import * as THREE from 'three';
 import * as TX from './textures.js';
 import { B, M, addGeo, addCol, frame, finalize, resetBuilder } from './builder.js';
@@ -6,16 +6,46 @@ import { DESIGNS } from './rooms.js';
 import * as FN from './furniture.js';
 import { gfx } from './gfx.js';
 
-export const ROOM = 26, WALL = 1, WH = 14, COLS = 4, ROWS = 3;
-export const SX = COLS * (ROOM + WALL) + WALL, SZ = ROWS * (ROOM + WALL) + WALL;
+export const ROOM = 26, WALL = 1, WH = 14;
 export const DOOR_W = 6.5, DOOR_H = 10, HOLE_W = 1.7, HOLE_H = 1.9;
 export const YARD = 28;   // uy atrofidagi hovli (to'siq bilan o'ralgan)
-export const BOUNDS = { x0: -YARD, z0: -YARD, x1: SX + YARD, z1: SZ + YARD };
 export const origin = (c, r) => [WALL + c * (ROOM + WALL), WALL + r * (ROOM + WALL)];
 
-export const GRID = [['bedroom', 'kids', 'bath', 'laundry'], ['library', 'living', 'dining', 'kitchen'], ['garden', 'entry', 'study', 'storage']];
-const NO_DOOR = new Set(['1,0|2,0', '3,0|3,1', '2,2|3,2', '0,1|0,2']);
-const HOLES = { '1,0|2,0': [13], '3,0|3,1': [13], '2,2|3,2': [13], '0,1|0,2': [13], '0,0|0,1': [8], '1,1|2,1': [8], '1,2|2,2': [18], '2,1|3,1': [18], '1,1|1,2': [18], '2,0|2,1': [18] };
+// ---------------- XARITALAR ----------------
+// noDoor — eshiksiz devorlar (u yerda faqat sichqon teshigi), holes — sichqon teshiklari
+export const MAPS = {
+  small: { name: 'Kichik uy', desc: "9 xona · 1 Tom va 1 Jerry", rooms: 9,
+    grid: [['bedroom', 'kids', 'bath'], ['library', 'living', 'kitchen'], ['garden', 'entry', 'storage']],
+    noDoor: ['1,0|2,0', '0,1|0,2'] },
+  big: { name: 'Katta uy', desc: "12 xona · 1 Tom va 1 Jerry", rooms: 12,
+    grid: [['bedroom', 'kids', 'bath', 'laundry'], ['library', 'living', 'dining', 'kitchen'], ['garden', 'entry', 'study', 'storage']],
+    noDoor: ['1,0|2,0', '3,0|3,1', '2,2|3,2', '0,1|0,2'],
+    holes: { '1,0|2,0': [13], '3,0|3,1': [13], '2,2|3,2': [13], '0,1|0,2': [13], '0,0|0,1': [8], '1,1|2,1': [8], '1,2|2,2': [18], '2,1|3,1': [18], '1,1|1,2': [18], '2,0|2,1': [18] } },
+  huge: { name: 'Ulkan uy', desc: "20 xona · 4 Tom va 6 Jerry", rooms: 20, team: { tom: 4, jerry: 6 },
+    grid: [['bedroom', 'kids', 'bath', 'laundry', 'bedroom'], ['library', 'living', 'dining', 'kitchen', 'study'], ['garden', 'kids', 'living', 'dining', 'storage'], ['study', 'library', 'entry', 'garden', 'laundry']],
+    noDoor: ['1,0|2,0', '4,0|4,1', '0,2|0,3', '3,2|4,2', '2,1|2,2'] },
+};
+export let MAP = 'big', COLS = 4, ROWS = 3, SX = 0, SZ = 0, BOUNDS = null, GRID = MAPS.big.grid;
+let NO_DOOR = new Set(), HOLES = {};
+export function setMap(id) {
+  const m = MAPS[id] || MAPS.big; MAP = MAPS[id] ? id : 'big';
+  GRID = m.grid; ROWS = GRID.length; COLS = GRID[0].length;
+  SX = COLS * (ROOM + WALL) + WALL; SZ = ROWS * (ROOM + WALL) + WALL;
+  BOUNDS = { x0: -YARD, z0: -YARD, x1: SX + YARD, z1: SZ + YARD };
+  NO_DOOR = new Set(m.noDoor || []);
+  if (m.holes) HOLES = m.holes;
+  else { // teshiklar: eshiksiz devorda o'rtada, qolganlarida navbatma-navbat chetroqda
+    HOLES = {};
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      for (const [c2, r2] of [[c + 1, r], [c, r + 1]]) {
+        if (c2 >= COLS || r2 >= ROWS) continue;
+        const k = `${c},${r}|${c2},${r2}`;
+        if (NO_DOOR.has(k)) HOLES[k] = [13]; else if ((c + r) % 2 === 0) HOLES[k] = [(c * 7 + r * 3) % 2 ? 8 : 18];
+      }
+    }
+  }
+}
+setMap('big');
 
 export const STYLE = {
   bedroom: { name: 'Yotoqxona', fl: () => TX.carpet('#6f84c4', '#56689f', '#d9c48a'), su: 26, wall: ['#f6dfe6', '#efcfdc', 'floral'], wains: '#f6f1ea', trim: '#ffffff', lamp: '#ffd6a8', map: '#e8a0bd' },
@@ -39,6 +69,7 @@ const WIN = {
 };
 
 const roomIndex = (c, r) => r * COLS + c;
+const entryRoom = () => ROOMS.find(R => R.key === 'entry') || ROOMS[ROOMS.length - 1];
 export const ROOMS = [];
 
 // dunyo koordinatali UV bilan quti
@@ -223,7 +254,7 @@ function buildOutside(scene) {
   // yo'lak va to'siq
   B.room = 99;
   const F = frame(0, 0, 0);
-  F.box(10, .1, 50, M.tex('path', TX.stone('#c8bba5', '#a89a80'), { roughness: .9 }), origin(1, 2)[0] + 13, 0, SZ + 25, { cast: false });
+  F.box(10, .1, 50, M.tex('path', TX.stone('#c8bba5', '#a89a80'), { roughness: .9 }), entryRoom().ox + 13, 0, SZ + 25, { cast: false });
   // hovli to'sig'i (undan o'tib bo'lmaydi)
   const { x0: X0, z0: Z0, x1: X1, z1: Z1 } = BOUNDS, fm = M.paint('#ffffff', .6);
   for (let x = X0; x <= X1; x += 4) { F.box(.4, 3.4, .4, fm, x, 0, Z0, { cast: false }); F.box(.4, 3.4, .4, fm, x, 0, Z1, { cast: false }); }
@@ -257,9 +288,10 @@ export function buildHouse(scene) {
   resetBuilder(scene);
   gfx.lamps.length = 0; gfx.shafts = [];
   ROOMS.length = 0;
+  const seen = {};
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-    const key = GRID[r][c], [ox, oz] = origin(c, r);
-    ROOMS.push({ key, idx: roomIndex(c, r), c, r, ox, oz, st: STYLE[key], name: STYLE[key].name });
+    const key = GRID[r][c], [ox, oz] = origin(c, r), n = seen[key] = (seen[key] || 0) + 1;
+    ROOMS.push({ key, idx: roomIndex(c, r), c, r, ox, oz, st: STYLE[key], name: STYLE[key].name + (n > 1 ? ' ' + n : '') });
   }
   const sideOf = (c, r) => (c < 0 || r < 0 || c >= COLS || r >= ROWS) ? null : ROOMS[roomIndex(c, r)];
 

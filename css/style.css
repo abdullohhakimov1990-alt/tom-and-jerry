@@ -433,6 +433,16 @@ body.touch #chatBar { bottom: auto; top: 112px; }
 .keys b { justify-self: end; background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.55); border-radius: 6px; padding: 0 6px; font-size: 11px; }
 #gameKeys { bottom: 96px; }
 body.touch .keys { display: none; }
+/* xaritalar */
+#btnMap { background: linear-gradient(180deg, #8d6e63, #5d4037); color: #fff; }
+.map-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.map-card { border: 3px solid rgba(255,255,255,.25); border-radius: 16px; padding: 12px; background: rgba(255,255,255,.06); cursor: pointer; text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.map-card:hover { border-color: var(--gold); } .map-card.on { border-color: #4caf50; background: rgba(76,175,80,.18); }
+.map-card .mp { display: grid; gap: 3px; padding: 6px; background: #20150c; border-radius: 8px; }
+.map-card .mp i { width: 18px; height: 14px; border-radius: 2px; display: block; }
+.map-card b { font-size: 18px; } .map-card .d { font-size: 13px; color: var(--muted); }
+.map-card .tm { font-size: 12px; font-weight: 800; color: #ffd23f; }
+#mapLoading { position: fixed; inset: 0; z-index: 90; background: rgba(10,6,20,.8); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; font-size: 20px; }
 /* HUB */
 #hubHud { position: fixed; inset: 0; z-index: 20; pointer-events: none; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
 #hubTop { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: rgba(15,8,25,.65); border: 2px solid rgba(255,255,255,.35); border-radius: 16px; padding: 5px 8px 5px 14px; pointer-events: auto; }

@@ -1,6 +1,6 @@
 // Ishga tushirish: grafika, uy, akkaunt, menyu va o'yin tsikli.
 import { initGfx, gfx, render, tuneEnv, detectQuality, adaptResolution } from './gfx.js';
-import { buildHouse } from './house.js';
+import { buildHouse, setMap, MAPS, MAP } from './house.js';
 import { NavGrid } from './nav.js';
 import { initHud } from './hud.js';
 import { buildIcons, doneIcons } from './icons.js';
@@ -73,8 +73,10 @@ window.addEventListener('beforeunload', () => { if (saveTimer) { clearTimeout(sa
 async function boot() {
   ui.loading(.05, 'Grafika tayyorlanmoqda...');
   await initGfx($('game'), app.settings.quality);
-  ui.loading(.2, 'Katta uy qurilmoqda...');
+  ui.loading(.2, 'Uy qurilmoqda...');
   await tick();
+  app.sceneBase = new Set(gfx.scene.children);   // uydan oldingi narsalar (yorug'lik, osmon)
+  setMap(app.settings.map || 'big');
   app.world = buildHouse(gfx.scene);
   tuneEnv(gfx.scene);
   ui.loading(.45, "Yo'llar hisoblanmoqda...");
@@ -215,6 +217,29 @@ app.startMatch = (opts = {}) => {
   app.match = new Match(app, opts.role || app.data.char, opts.net);
   app.match.lock();
 };
+// ---------------- XARITA almashtirish (uy qaytadan quriladi) ----------------
+app.setMap = async id => {
+  if (!MAPS[id] || app.match || app.hub) return;
+  if (id === MAP) return;
+  app.settings.map = id; app.saveSettings();
+  const ov = $('mapLoading'); ov.classList.remove('hidden'); ov.querySelector('b').textContent = MAPS[id].name + ' qurilmoqda...';
+  await new Promise(r => setTimeout(r, 60));
+  for (const o of [...gfx.scene.children]) if (!app.sceneBase.has(o)) { gfx.scene.remove(o); o.traverse && o.traverse(x => { if (x.isMesh && x.geometry) x.geometry.dispose(); }); }
+  setMap(id);
+  app.world = buildHouse(gfx.scene); tuneEnv(gfx.scene);
+  await new Promise(r => setTimeout(r, 0));
+  app.navJ = new NavGrid(app.world, .36, 1.45);
+  app.navT = new NavGrid(app.world, .85, 3.4);
+  initHud(app.world);
+  app.stage = makeStage(app);
+  const sk = app.data ? app.data.equip.skin : { jerry: 'classic', tom: 'classic' };
+  app.stage.set('jerry', sk.jerry || 'classic'); app.stage.set('tom', sk.tom || 'classic');
+  if (app.partyBack) app.partyBack();
+  ui.renderTop(); ov.classList.add('hidden');
+  ui.toast(`🗺 ${MAPS[id].name} — ${MAPS[id].desc}`);
+};
+app.maps = MAPS; app.curMap = () => MAP;
+
 // ---------------- HUB (onlayn o'yinchilar birga) ----------------
 app.enterHub = () => {
   if (app.match || app.hub) return;

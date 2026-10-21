@@ -69,7 +69,7 @@ export class Match {
     const jp = this.navJ.nearestFree(lr.ox + 6, lr.oz + 13);
     J.p.set(jp[0], 0, jp[1]); J.yaw = Math.PI / 2;
     const far = ['laundry', 'storage', 'garden', 'bedroom'][this.net ? this.net.seed % 4 : Math.floor(Math.random() * 4)];
-    const tr = rooms.find(r => r.key === far);
+    const tr = rooms.find(r => r.key === far) || rooms[rooms.length - 1];
     const tp = this.navT.nearestFree(tr.ox + 13, tr.oz + 13, 12);
     T.p.set(tp[0], 0, tp[1]);
   }

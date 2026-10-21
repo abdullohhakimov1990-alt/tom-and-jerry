@@ -29,6 +29,7 @@ ui.init = function (a) {
   $('btnAdmin').onclick = () => ui.openAdmin();
   $('btnApGift').onclick = ui.adminGift;
   $('btnHub').onclick = () => { SND.play('click'); app.enterHub(); };
+  $('btnMap').onclick = () => { SND.play('click'); ui.openMaps(); };
   $('btnApWipe').onclick = ui.adminWipe; $('btnApWipeAll').onclick = ui.adminWipeAll;
   $('apWipePid').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
   document.querySelectorAll('[data-note]').forEach(b => b.onclick = () => { $('frNote').value = b.dataset.note; SND.play('click'); });
@@ -98,6 +99,7 @@ ui.confirm = text => new Promise(res => {
 
 // ---------------- yuqori panel ----------------
 ui.renderTop = function () {
+  if (app.maps && $('mapName')) { const m = app.maps[app.curMap()]; $('mapName').textContent = `${m.name} · ${m.rooms} xona`; }
   const d = app.data, p = app.profile; if (!d || !p) return;
   for (const [id, k] of [['wSir', 'sir'], ['wGold', 'gold'], ['wDia', 'diamond']]) { $(id).textContent = fmt(d.wallet[k]); document.querySelectorAll('.' + id).forEach(e => e.textContent = fmt(d.wallet[k])); }
   $('pcIcon').src = iconURL[p.icon] || iconURL.j_classic; $('pcNick').innerHTML = nickHTML(p.nick, p.color) + roleBadge(app.isSuper ? 'super' : app.isAdmin ? 'admin' : '');
@@ -368,6 +370,19 @@ ui.openGift = function (f) {
     } catch (e) { ui.toast(e.message, true); }
     $('btnGift').disabled = false;
   };
+};
+
+// ---------------- xarita tanlash ----------------
+ui.openMaps = function () {
+  const cur = app.curMap();
+  $('mapCards').innerHTML = Object.entries(app.maps).map(([id, m]) => {
+    const cols = m.grid[0].length;
+    const cells = m.grid.flat().map(k => `<i style="background:${({ bedroom: '#e8a0bd', kids: '#ffe066', bath: '#8ecdf0', laundry: '#b0c4cc', library: '#7fa86f', living: '#e0b878', dining: '#e7a56f', kitchen: '#86d0b4', garden: '#9ccc65', entry: '#9fb6d8', study: '#8fa8c8', storage: '#b8a888' })[k] || '#999'}"></i>`).join('');
+    return `<div class="map-card ${id === cur ? 'on' : ''}" data-map="${id}"><div class="mp" style="grid-template-columns:repeat(${cols},18px)">${cells}</div>
+      <b>${m.name}</b><div class="d">${m.desc}</div>${m.team ? `<div class="tm">🐱×${m.team.tom} vs 🐭×${m.team.jerry} — jamoaviy</div>` : ''}${id === cur ? '<div class="tm" style="color:#7dffa8">✓ Tanlangan</div>' : ''}</div>`;
+  }).join('');
+  $('mapCards').querySelectorAll('[data-map]').forEach(c => c.onclick = async () => { ui.close('mapPick'); SND.play('click'); await app.setMap(c.dataset.map); ui.renderTop(); });
+  ui.open('mapPick');
 };
 
 // ---------------- donat ----------------

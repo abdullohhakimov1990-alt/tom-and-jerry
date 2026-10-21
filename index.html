@@ -81,6 +81,7 @@
   </div>
   <div id="partyTag" class="hidden"><span class="pn"></span><button id="partyLeave" title="Guruhdan chiqish">✕</button></div>
   <div class="menu-right">
+    <button id="btnMap" class="btn">🗺 <span id="mapName">Katta uy</span></button>
     <button id="btnHub" class="btn green">🏠 Hub</button>
     <button id="btnShop" class="btn purple">🛒 Do'kon</button>
     <button id="btnRules" class="btn blue">📖 Qoidalar</button>
@@ -269,6 +270,12 @@
     <button id="tMap" class="tbtn small" aria-label="Xarita">🗺</button>
     <button id="tPause" class="tbtn small" aria-label="Pauza">II</button>
   </div>
+<div id="mapPick" class="modal hidden"><div class="mbox wide">
+  <button class="x" data-close="mapPick">✕</button>
+  <h2>🗺 Xarita tanlash</h2>
+  <div id="mapCards" class="map-cards"></div>
+</div></div>
+<div id="mapLoading" class="hidden"><div class="spinner"></div><b>Uy qurilmoqda...</b></div>
 <!-- ============ HUB ============ -->
 <div id="hubHud" class="hidden">
   <div id="hubTags"></div>

@@ -120,11 +120,12 @@ export function initOnline(app) {
     if (!P.info) { ui.toast("Do'stingiz hali ulanmoqda...", true); return; }
     const meTom = Math.random() < .5;
     const roles = { [app.user.uid]: meTom ? 'tom' : 'jerry', [P.opp]: meTom ? 'jerry' : 'tom' };
-    await net.updateRoom(P.room, { status: 'play', roles, startAt: net.now() + 5000, seed: Math.floor(Math.random() * 1e6), left: null, p: null });
+    await net.updateRoom(P.room, { status: 'play', roles, map: app.curMap(), startAt: net.now() + 5000, seed: Math.floor(Math.random() * 1e6), left: null, p: null });
   };
-  function start(room, r) {
+  async function start(room, r) {
     const P = app.party, me = app.user.uid;
     ui.close('shop'); ui.close('friends'); ui.close('result'); closeChat();
+    if (r.map && r.map !== app.curMap()) await app.setMap(r.map);   // do'st tanlagan xaritaga o'tish
     app.startMatch({ role: r.roles[me], net: { api: net, room, opp: P.opp, startAt: r.startAt, seed: r.seed || 1, oppInfo: P.info || {}, voice: P.voice, party: true } });
   }
   // o'yindan qaytgach guruh oynasini yangilash

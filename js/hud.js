@@ -26,7 +26,8 @@ function buildBase(world) {
   g.fillStyle = '#4f8a35'; g.fillRect(0, 0, base.width, base.height);
   g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(2, 2, base.width - 4, base.height - 4);
   g.translate(-BOUNDS.x0 * PPU, -BOUNDS.z0 * PPU);   // endi dunyo koordinatalari bilan chizamiz
-  g.fillStyle = '#c8bba5'; g.fillRect((28 + 13 - 5) * PPU, SZ * PPU, 10 * PPU, (BOUNDS.z1 - SZ) * PPU);
+  const E = world.rooms.find(R => R.key === 'entry') || world.rooms[0];
+  g.fillStyle = '#c8bba5'; g.fillRect((E.ox + 13 - 5) * PPU, SZ * PPU, 10 * PPU, (BOUNDS.z1 - SZ) * PPU);
   g.fillStyle = '#20150c'; g.fillRect(0, 0, SX * PPU, SZ * PPU);
   for (const R of world.rooms) {
     g.fillStyle = R.st.map; g.fillRect(R.ox * PPU, R.oz * PPU, 26 * PPU, 26 * PPU);
