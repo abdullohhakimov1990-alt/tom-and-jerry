@@ -40,7 +40,7 @@ export async function firebaseNet(app, cfg, uid) {
     watchHubChat(cb) { return D.onChildAdded(D.query(R('hub/chat'), D.limitToLast(15)), s => cb(s.val())); },
     hubSig(to, o) { D.push(R('hub/sig/' + to), Object.assign({ from: uid }, o)).catch(() => { }); },
     watchHubSig(cb) { return D.onChildAdded(R('hub/sig/' + uid), s => { const v = s.val(); D.remove(s.ref).catch(() => { }); if (v) cb(v); }); },
-    async leave(id) { try { await D.onDisconnect(R(`rooms/${id}/p/${uid}`)).cancel(); await D.onDisconnect(R(`rooms/${id}/left/${uid}`)).cancel(); await D.set(R(`rooms/${id}/left/${uid}`), true); await D.remove(R(`rooms/${id}/p/${uid}`)); } catch (e) { } },
+    async leave(id, soft) { if (soft) { await D.remove(R(`rooms/${id}/p/${uid}`)).catch(() => { }); return; } try { await D.onDisconnect(R(`rooms/${id}/p/${uid}`)).cancel(); await D.onDisconnect(R(`rooms/${id}/left/${uid}`)).cancel(); await D.set(R(`rooms/${id}/left/${uid}`), true); await D.remove(R(`rooms/${id}/p/${uid}`)); } catch (e) { } },
   };
   return N;
 }
@@ -83,7 +83,7 @@ export function localNet(uid) {
     watchHubChat(cb) { const f = m => { if (m.k === 'hubchat') cb(m.v); }; msg.add(f); return () => msg.delete(f); },
     hubSig(to, o) { ch.postMessage({ k: 'hubsig', to, v: Object.assign({ from: uid }, o) }); },
     watchHubSig(cb) { const f = m => { if (m.k === 'hubsig' && m.to === uid) cb(m.v); }; msg.add(f); return () => msg.delete(f); },
-    async leave(id) { if (N._unload) window.removeEventListener('beforeunload', N._unload); ch.postMessage({ k: 'gone', id, uid }); await N.updateRoom(id, { ['left/' + uid]: true }); },
+    async leave(id, soft) { ch.postMessage({ k: 'gone', id, uid }); if (soft) return; if (N._unload) window.removeEventListener('beforeunload', N._unload); await N.updateRoom(id, { ['left/' + uid]: true }); },
   };
   return N;
 }

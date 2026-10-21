@@ -246,6 +246,7 @@ function endMatch() {
   m.dispose(); app.match = null;
   $('menu').classList.remove('hidden'); app.stage.show(true); ui.renderTop();
   $('countdown').classList.add('hidden');
+  if (app.partyBack) app.partyBack();
   SND.stopMusic(); SND.setMood('chase'); SND.playMusic(app.data.equip.music);
 }
 app.onMatchEnd = r => {

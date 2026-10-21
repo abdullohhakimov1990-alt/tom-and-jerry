@@ -392,12 +392,14 @@ export class Match {
     this.buf = []; this.sendT = 0; this.tagCd = 0; this.gotRemote = false; this.lastRemoteT = N.now();
     this.netUn = [
       N.watchState(room, this.net.opp, st => this.onRemote(st)),
-      N.watchEvents(room, ev => this.onNetEvent(ev)),
+      N.watchEvents(room, ev => { if (!ev.t || ev.t > this.net.startAt - 6000) this.onNetEvent(ev); }), // eski (oldingi raund) hodisalar emas
       N.watchRoom(room, r => { if (r && r.left && r.left[this.net.opp]) this.oppLeft(); }),
     ];
     N.armDisconnect(room);
     this.chatInit();
-    this.voice = new Voice(o => N.sendEvent(room, Object.assign({ type: 'rtc' }, o)), this.app.user.uid < this.net.opp, () => this.voiceUI());
+    // guruhdan kelgan bo'lsa — o'sha ovozli aloqa davom etadi
+    if (this.net.voice) { this.voice = this.net.voice; this.voice.onChange = () => this.voiceUI(); }
+    else this.voice = new Voice(o => N.sendEvent(room, Object.assign({ type: 'rtc' }, o)), this.app.user.uid < this.net.opp, () => this.voiceUI());
     const nick = (this.net.oppInfo || {}).nick || "Do'st";
     hud.say(`Siz ${this.me === 'tom' ? 'TOM' : 'JERRY'} bo'ldingiz! Raqib: ${nick}`, 'gold', 4.5);
   }
@@ -866,10 +868,11 @@ export class Match {
   dispose() {
     const c = gfx.renderer.domElement;
     hud.jerryMark(false);
-    if (this.voice) { this.voice.close(); this.voice = null; }
+    if (this.voice && !(this.net && this.net.voice)) this.voice.close();
+    this.voice = null;
     this.chatOpen = false; $('netBar').classList.add('hidden'); $('chatBar').classList.add('hidden'); $('chatBox').innerHTML = ''; $('oppVoice').classList.add('hidden');
     document.getElementById('abil').removeEventListener('pointerdown', this.h.ab);
-    if (this.net) { (this.netUn || []).forEach(u => u && u()); this.net.api.leave(this.net.room); const tg = document.getElementById('oppTag'); if (tg) tg.classList.add('hidden'); }
+    if (this.net) { (this.netUn || []).forEach(u => u && u()); this.net.api.leave(this.net.room, !!this.net.party); const tg = document.getElementById('oppTag'); if (tg) tg.classList.add('hidden'); }
     if (this.touch) this.touch.detach();
     document.getElementById('hotbar').removeEventListener('pointerdown', this.h.hb);
     window.removeEventListener('keydown', this.h.kd); window.removeEventListener('keyup', this.h.ku);

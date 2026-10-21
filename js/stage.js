@@ -7,6 +7,9 @@ export function makeStage(app) {
   const R = app.world.rooms.find(r => r.key === 'kids');
   const pos = { jerry: new THREE.Vector3(R.ox + 10.6, 0, R.oz + 15.8), tom: new THREE.Vector3(R.ox + 15.4, 0, R.oz + 15.2) };
   const models = { jerry: null, tom: null }, sets = { jerry: null, tom: null };
+  // guruhdagi do'st (PUBG kabi — yoningizda turadi)
+  const fpos = new THREE.Vector3(R.ox + 13, 0, R.oz + 12.6);
+  let friend = null, friendKey = '';
   const rings = {};
   for (const k of ['jerry', 'tom']) {
     const s = k === 'jerry' ? 1.1 : 1.9;
@@ -29,7 +32,7 @@ export function makeStage(app) {
       gfx.scene.add(m.root); tuneEnv(m.root); models[kind] = m; sets[kind] = setId;
       m.root.visible = S.visible;
     },
-    show(on) { S.visible = on; for (const k in models) if (models[k]) models[k].root.visible = on; for (const k in rings) rings[k].visible = on; },
+    show(on) { S.visible = on; if (friend) friend.root.visible = on; for (const k in models) if (models[k]) models[k].root.visible = on; for (const k in rings) rings[k].visible = on; },
     shop(on) { shopTarget = on ? 1 : 0; },
     update(dt, time) {
       t += dt; waveT -= dt;
@@ -44,6 +47,7 @@ export function makeStage(app) {
         rings[k].children[1].material.opacity = isSel ? .22 + Math.sin(t * 4) * .08 : 0;
         rings[k].rotation.y += dt * .5;
       }
+      if (friend) friend.update(dt, Math.sin(t * .6 + 1) > .4 ? 'wave' : 'idle');
       shopShift += (shopTarget - shopShift) * Math.min(1, dt * 5);
       const cam = gfx.camera;
       if (cam.fov !== 55) { cam.fov = 55; cam.updateProjectionMatrix(); }
@@ -53,6 +57,21 @@ export function makeStage(app) {
       updateGfx(dt, look, time);
     },
     celebrate() { waveT = 1.6; },
+    setFriend(info) {
+      const key = info ? (info.kind || 'jerry') + ':' + ((info.skins || {})[info.kind || 'jerry'] || 'classic') : '';
+      if (key === friendKey) return; friendKey = key;
+      if (friend) { gfx.scene.remove(friend.root); friend.dispose(); friend = null; }
+      if (!info) return;
+      const kind = info.kind === 'tom' ? 'tom' : 'jerry';
+      friend = makeCharacter(kind, (info.skins || {})[kind] || 'classic');
+      friend.root.position.copy(fpos); friend.root.rotation.y = 0; friend.kind = kind;
+      gfx.scene.add(friend.root); tuneEnv(friend.root); friend.root.visible = S.visible;
+    },
+    friendScreenPos() {
+      if (!friend) return null;
+      const v = fpos.clone(); v.y = (friend.kind === 'tom' ? 3.45 : 1.5) + .5; v.project(gfx.camera);
+      return [(v.x * .5 + .5) * window.innerWidth, (-v.y * .5 + .5) * window.innerHeight];
+    },
     // HTML kartalar uchun ekrandagi joy
     screenPos(kind) {
       const v = pos[kind].clone(); v.y = -.2; v.project(gfx.camera);

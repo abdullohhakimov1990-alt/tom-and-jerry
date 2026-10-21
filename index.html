@@ -70,6 +70,16 @@
   <button id="btnFriends" class="friends-btn"><span class="fb-ic">👥</span><span>Do'stlar</span><i id="frBadge" class="badge hidden">0</i></button>
   <div class="menu-logo"><div class="logo-top sm">TOM <span>&amp;</span> JERRY</div><div class="logo-sub sm">KATTA UY</div></div>
   <div id="charCards"></div>
+  <!-- guruh: chat va mikrofon (chap pastda) -->
+  <div id="menuSocial"><button id="mChatBtn" class="soc" title="Guruh chati">💬<small>Chat</small></button><button id="mMicBtn" class="soc" title="Mikrofon">🎤<small>Mikrofon</small></button></div>
+  <div id="menuChat" class="hidden">
+    <div class="mc-head"><b>💬 Guruh chati</b><button id="mChatClose" class="x">✕</button></div>
+    <div id="mChatList"></div>
+    <div id="mChatHint" class="sub hidden">Guruhda hech kim yo'q. <b>Do'stlar → 🎮</b> orqali do'stingizni taklif qiling — u shu yerda yoningizda paydo bo'ladi.</div>
+    <div id="mChatQuick"></div>
+    <div class="chat-in"><input id="mChatInput" maxlength="80" autocomplete="off" placeholder="Xabar yozing..."><button id="mChatSend" class="btn orange">➤</button></div>
+  </div>
+  <div id="partyTag" class="hidden"><span class="pn"></span><button id="partyLeave" title="Guruhdan chiqish">✕</button></div>
   <div class="menu-right">
     <button id="btnHub" class="btn green">🏠 Hub</button>
     <button id="btnShop" class="btn purple">🛒 Do'kon</button>
@@ -212,10 +222,10 @@
   <div id="cardMsg" class="msg"></div>
 </div></div>
 <div id="invite" class="modal hidden"><div class="mbox center">
-  <h2>🎮 Taklif!</h2>
+  <h2>🎮 Guruhga taklif!</h2>
   <img id="invIcon" class="inv-ic" alt="">
-  <div><b id="invNick" class="nick"></b> sizni birga o'ynashga chaqiryapti</div>
-  <div class="sub">Kim Tom, kim Jerry bo'lishini o'yin o'zi tasodifiy tanlaydi</div>
+  <div><b id="invNick" class="nick"></b> sizni guruhiga chaqiryapti</div>
+  <div class="sub">Menyuda birga turasiz, chat va mikrofonda gaplashasiz. O'YNASH bosilganda kim Tom, kim Jerry bo'lishini o'yin tasodifiy tanlaydi.</div>
   <div class="row"><button id="btnInvYes" class="btn green big">Qo'shilish</button><button id="btnInvNo" class="btn red">Rad etish</button></div>
 </div></div>
 <div id="waiting" class="modal hidden"><div class="mbox center">

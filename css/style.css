@@ -84,6 +84,23 @@ kbd { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 6px
 .friends-btn .fb-ic { font-size: 34px; line-height: 1; }
 .badge { position: absolute; right: -6px; top: -6px; min-width: 26px; height: 26px; border-radius: 13px; background: var(--red); border: 2px solid #fff; font-style: normal; font-weight: 900; display: flex; align-items: center; justify-content: center; font-size: 14px; animation: pulse .6s infinite alternate; }
 .menu-logo { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); text-align: center; pointer-events: none !important; }
+/* guruh: chat va mikrofon */
+#menuSocial { position: absolute; left: 13%; bottom: 16%; display: flex; gap: 12px; }
+#menuSocial .soc { width: 72px; height: 62px; border-radius: 16px; border: 3px solid #fff; background: linear-gradient(180deg, #ff6b6b, #c62828); color: #fff; font-size: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,.35); font-family: inherit; position: relative; }
+#menuSocial .soc small { font-size: 11px; font-weight: 800; margin-top: 2px; }
+#mMicBtn { background: linear-gradient(180deg, #66d16e, #2e7d32) !important; }
+#mMicBtn:not(.on) { filter: saturate(.55); } #mMicBtn.on { box-shadow: 0 0 14px rgba(80,255,130,.9), 0 5px 0 rgba(0,0,0,.35); }
+#menuSocial .soc:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+#mChatBtn.new::after { content: ''; position: absolute; top: -5px; right: -5px; width: 14px; height: 14px; border-radius: 50%; background: #ffd23f; border: 2px solid #fff; }
+#menuChat { position: absolute; left: 13%; bottom: calc(16% + 76px); width: min(360px, 80vw); background: rgba(20,12,30,.88); border: 2px solid rgba(255,255,255,.35); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.mc-head { display: flex; justify-content: space-between; align-items: center; } .mc-head .x { position: static; }
+#mChatList { max-height: 190px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+#mChatList .cm { background: rgba(255,255,255,.08); border-radius: 10px; padding: 4px 9px; font-size: 14px; font-weight: 700; word-break: break-word; } #mChatList .cm.me { background: rgba(40,110,50,.6); }
+#mChatQuick { display: flex; flex-wrap: wrap; gap: 4px; }
+#partyTag { position: absolute; transform: translate(-50%, -100%); display: flex; align-items: center; gap: 6px; background: rgba(20,12,30,.75); border: 2px solid rgba(255,255,255,.5); border-radius: 12px; padding: 3px 6px 3px 10px; font-weight: 800; white-space: nowrap; }
+#partyTag button { width: 22px; height: 22px; border-radius: 50%; border: none; background: #e53935; color: #fff; font-weight: 900; cursor: pointer; line-height: 1; }
+@media (max-width: 1100px) { #menuSocial { left: 16px; bottom: 6%; flex-direction: column; } #menuChat { left: 100px; bottom: 6%; } }
+body.touch #menuSocial { left: 10px; bottom: 10px; } body.touch #menuChat { left: 10px; bottom: 84px; }
 .menu-right { position: absolute; right: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 10px; align-items: stretch; width: 230px; }
 .btn.play { font-size: 34px; padding: 10px 20px 8px; border-radius: 22px; border-width: 3px; background: linear-gradient(#ffd23f, #ff8a00); color: #fff; box-shadow: 0 7px 0 #a04a00, 0 12px 30px rgba(255,140,0,.45); text-shadow: 0 3px 0 #a04a00; animation: playPulse 1.6s infinite ease-in-out; line-height: 1; }
 .btn.play small { display: block; font-size: 14px; letter-spacing: 1px; text-shadow: none; opacity: .9; }

@@ -38,7 +38,7 @@ ui.init = function (a) {
   $('btnSettings').onclick = () => ui.openSettings();
   $('btnFriends').onclick = () => ui.openFriends();
   $('profileChip').onclick = () => ui.openProfile();
-  $('btnPlay').onclick = () => { SND.play('click'); app.startMatch(); };
+  $('btnPlay').onclick = () => { SND.play('click'); if (app.party) app.partyPlay(); else app.startMatch(); };
   document.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => {
     if (b.dataset.ex === 'sir') ui.toast("Sir o'yinda yig'iladi — Jerry bo'lib sir ye, Tom bo'lib Jerryni ushla!");
     else ui.openShop('exchange');
