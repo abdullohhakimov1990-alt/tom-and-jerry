@@ -364,6 +364,11 @@ export function makeCharacter(kind, setId = 'classic') {
       } else if (mode === 'caught') {
         legL.piv.rotation.x = Math.sin(t * 25) * .9; legR.piv.rotation.x = -Math.sin(t * 25) * .9;
         armL.piv.rotation.x = -3; armR.piv.rotation.x = -3; armL.piv.rotation.z = -.4 + Math.sin(t * 20) * .3; armR.piv.rotation.z = .4 - Math.sin(t * 20) * .3;
+      } else if (mode === 'dazed') { // portlashdan keyin yerga o'tirib qolgan, boshi aylanmoqda
+        hips.position.y = hy * .42; hips.rotation.x = -.25;
+        legL.piv.rotation.x = -1.45; legR.piv.rotation.x = -1.45; legL.piv.rotation.z = .25; legR.piv.rotation.z = -.25;
+        armL.piv.rotation.z = -.9; armR.piv.rotation.z = .9; armL.piv.rotation.x = .3; armR.piv.rotation.x = .3;
+        head.rotation.z = Math.sin(t * 4) * .35; head.rotation.x = .25 + Math.cos(t * 4) * .15;
       } else if (mode === 'stunned') {
         hips.rotation.z = Math.sin(t * 3) * .15; head.rotation.z = Math.sin(t * 5) * .3;
         armL.piv.rotation.z = -1; armR.piv.rotation.z = 1; armL.piv.rotation.x = Math.sin(t * 6) * .4;

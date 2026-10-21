@@ -133,6 +133,9 @@ function enterMenu(acc) {
   app.backend.getRole().then(role => {
     app.role = role; app.isSuper = role === 'super'; app.isAdmin = role !== 'player';
     applyAdmin(app.data); ui.renderTop(); if (app.isAdmin) app.saveSoon();
+    // admin ranglari oddiy o'yinchida qolmasin
+    const col = COLORS.find(c => c.id === app.profile.color);
+    if (!app.isAdmin && col && col.admin) ui.setColor('white');
   });
   if (!acc.data) app.saveNow();
   app.profile.icon = app.profile.icon || app.data.equip.icon; app.profile.color = app.profile.color || app.data.equip.color;

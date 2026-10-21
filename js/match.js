@@ -5,10 +5,11 @@ import { moveBody } from './physics.js';
 import { makeCharacter, makeSpike, DIM } from './models.js';
 import * as SND from './audio.js';
 import { hud } from './hud.js';
-import { ITEMS } from './catalog.js';
+import { ITEMS, ABIL } from './catalog.js';
 import * as PR from './props.js';
 import { TomAI, JerryAI } from './ai.js';
 import { attachTouch, isTouch } from './touch.js';
+import { COLS } from './house.js';
 
 export const MATCH_TIME = 180, LIVES = 3, HIDE_MAX = 25;
 const SPD = { jerry: { run: 9, sprint: 12.6, jump: 14.4 }, tom: { run: 10.6, sprint: 13.4, jump: 14.9 } };
@@ -30,6 +31,7 @@ export class Match {
     if (this.net) { const os = (this.net.oppInfo || {}).skins || {}; const ok = me === 'jerry' ? 'tom' : 'jerry'; eq[ok] = os[ok] || 'classic'; }
     this.jerry = this.ent('jerry', eq.jerry); this.tom = this.ent('tom', eq.tom);
     this.bubble = PR.makeBubble(.95); this.jerry.model.root.add(this.bubble); this.bubble.position.y = .75;
+    this.birds = PR.makeBirds(); this.tom.model.root.add(this.birds); this.birds.position.y = DIM.tom.h * .74; this.birds.scale.setScalar(1.5); this.nearJT = -99;
     // sirlar: mebel ustidagi + poldagi tasodifiy nuqtalar
     const pts = this.world.tops.filter(p => p.y < 9).map(p => p.clone());
     for (let i = 0; i < 90; i++) { const c = this.navJ.randomFree(); if (c) pts.push(new THREE.Vector3(c[0], 0, c[1])); }
@@ -52,7 +54,7 @@ export class Match {
     const model = makeCharacter(kind, skin || 'classic');
     gfx.scene.add(model.root);
     return { kind, model, p: new THREE.Vector3(), v: new THREE.Vector3(), r: kind === 'jerry' ? .36 : .85, h: DIM[kind].h, step: kind === 'jerry' ? .5 : .65,
-      onGround: true, yaw: 0, stam: 1, stun: 0, hidden: null, sprinting: false, invis: 0, shield: 0, speedT: 0, magnet: 0, invul: 0, pounceT: 0, anim: 'idle' };
+      onGround: true, yaw: 0, stam: 1, stun: 0, dazed: 0, abCd: 0, hidden: null, sprinting: false, invis: 0, shield: 0, speedT: 0, magnet: 0, invul: 0, pounceT: 0, anim: 'idle' };
   }
   spawn() {
     const rooms = this.world.rooms, J = this.jerry, T = this.tom;
@@ -92,6 +94,8 @@ export class Match {
     c.addEventListener('pointerdown', this.h.td); window.addEventListener('pointermove', this.h.tm); window.addEventListener('pointerup', this.h.tu);
     this.h.hb = e => { const sl = e.target.closest('.slot'); if (sl) { e.preventDefault(); this.useItem(+sl.dataset.i); } };
     document.getElementById('hotbar').addEventListener('pointerdown', this.h.hb);
+    this.h.ab = e => { e.preventDefault(); this.useAbility(this.player); };
+    document.getElementById('abil').addEventListener('pointerdown', this.h.ab);
     hud.lockHint(!isTouch());
   }
   toggleBig() { hud.toggleBig(this.bigOn); }
@@ -117,6 +121,7 @@ export class Match {
     else if (k === 'KeyV') this.cam.fp = !this.cam.fp;
     else if (k === 'KeyM') { this.bigOn = !this.bigOn; this.toggleBig(); }
     else if (k === 'KeyQ' && this.me === 'tom') this.pounce(this.tom);
+    else if (k === 'KeyE') this.useAbility(this.player);
     else if (/^Digit[1-9]$/.test(k)) this.useItem(+k.slice(5) - 1);
   }
 
@@ -264,11 +269,32 @@ export class Match {
     SND.play('power');
     if (!['heart', 'sniff'].includes(it.id)) hud.toast(it.name + '!', 'green', 1);
   }
+  // qobiliyat (E): Jerry — bomba, Tom — qopqon. Bepul, har 18 soniyada
+  useAbility(e) {
+    if (this.phase !== 'play' || e.hidden || e.stun > 0) return false;
+    const A = ABIL[e.kind], mine = e === this.player;
+    if (e.abCd > 0) { if (mine) { hud.toast(`${A.name} ${Math.ceil(e.abCd)} soniyadan keyin tayyor`, 'red', 1); SND.play('error'); } return false; }
+    e.abCd = A.cd;
+    const y = e.onGround ? e.p.y : (e.ground || 0);
+    this.addProp(A.id, e.p.x, y, e.p.z, e.yaw, mine);
+    if (e.kind === 'jerry') { SND.play('fuse'); if (mine) hud.toast("💣 Bomba qo'yildi — Tomni shu yerga olib kel!", 'green', 1.8); }
+    else { SND.play('trap'); if (mine) hud.toast("🪤 Qopqon qo'yildi!", 'green', 1.2); }
+    return true;
+  }
+  // bomba portladi: Tom 3 soniya o'tirib qoladi, boshida qushlar aylanadi
+  bombHit(p, remote) {
+    const T = this.tom;
+    T.stun = 3; T.dazed = 3; T.pounceT = 0; T.v.set(0, remote ? 0 : 6, 0);
+    PR.boom(p); SND.play('boom'); setTimeout(() => SND.play('tweet'), 500); this.app.shake(.9);
+    if (this.net && !remote) this.netSend({ type: 'boom', x: p.x, y: p.y, z: p.z });
+    if (this.me === 'jerry') hud.toast('💥 BUM! Tom 3 soniya hushsiz!', 'gold', 1.8);
+    else { hud.flashRed(1.2, '255,140,0'); hud.toast('💥 BUM! Bombaga tushding!', 'red', 1.6); }
+  }
   addProp(type, x, y, z, yaw = 0, broadcast = false, id) {
     id = id || Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-    const m = type === 'banana' ? PR.makeBanana() : PR.makeTrap();
+    const m = type === 'banana' ? PR.makeBanana() : type === 'bomb' ? PR.makeBomb() : PR.makeTrap();
     const p = new THREE.Vector3(x, y, z); m.position.copy(p); m.rotation.y = yaw; gfx.scene.add(m);
-    this.traps.push({ type, p, mesh: m, t: type === 'banana' ? 40 : 60, id });
+    this.traps.push({ type, p, mesh: m, t: type === 'banana' ? 40 : type === 'bomb' ? 45 : 60, arm: type === 'bomb' ? .7 : 0, id });
     if (broadcast) this.netSend({ type: 'prop', kind: type, x, y, z, yaw, id });
   }
   removeProp(id) { const i = this.traps.findIndex(t => t.id === id); if (i >= 0) { PR.poof(this.traps[i].p.clone().setY(.4), '#ffe9a8', 10, .6); gfx.scene.remove(this.traps[i].mesh); this.traps.splice(i, 1); } }
@@ -392,6 +418,8 @@ export class Match {
       case 'found': if (this.me === 'jerry' && J.hidden && J.hidden.id === ev.spot) this.tomFinds(J.hidden); break;
       case 'prop': this.addProp(ev.kind, ev.x, ev.y, ev.z, ev.yaw || 0, false, ev.id); break;
       case 'propgone': this.removeProp(ev.id); break;
+      case 'boom': this.bombHit(new THREE.Vector3(ev.x, ev.y, ev.z), true); break;
+      case 'trapped': if (this.me === 'tom') { SND.play('trap'); hud.toast('Jerry qopqonga tushdi!', 'gold'); } break;
       case 'spike': if (this.me === 'tom') { this.callSpike(); T.slowT = 8; hud.toast('SPIKE seni quvlayapti!', 'red', 1.6); } break;
       case 'end': this.finish(ev.tomWon, true); break;
     }
@@ -471,6 +499,7 @@ export class Match {
   animOf(e, forced) {
     if (forced) return forced;
     if (e.celebrate > 0) return 'celebrate';
+    if (e.dazed > 0) return 'dazed';
     if (e.stun > 0) return 'stunned';
     if (e.pounceT > 0) return 'pounce';
     if (!e.onGround) return e.v.y > 0 ? 'jump' : 'fall';
@@ -544,7 +573,7 @@ export class Match {
     for (const e of [J, T]) {
       e.stun = Math.max(0, e.stun - dt); e.invul = Math.max(0, e.invul - dt); e.pounceCd = Math.max(0, (e.pounceCd || 0) - dt);
       e.speedT = Math.max(0, e.speedT - dt); e.invis = Math.max(0, e.invis - dt); e.magnet = Math.max(0, e.magnet - dt); e.celebrate = Math.max(0, (e.celebrate || 0) - dt);
-      e.slowT = Math.max(0, (e.slowT || 0) - dt);
+      e.slowT = Math.max(0, (e.slowT || 0) - dt); e.dazed = Math.max(0, e.dazed - dt); e.abCd = Math.max(0, e.abCd - dt);
       if (e.shield > 0) { e.shield -= dt; if (e.shield <= 0) this.bubble.visible = false; }
     }
     this.radarT = Math.max(0, this.radarT - dt);
@@ -580,6 +609,9 @@ export class Match {
       } else if (J.hidden && playing) { const o = this.jerryAI.update(dt); if (o.exit) this.exitHide(J); }
       else if (!J.hidden) this.drive(J, null, 0, dt, 0);
     }
+    // AI ham qobiliyatini ishlatadi: Jerry quvilganda bomba tashlaydi, Tom qidirganda qopqon qo'yadi
+    if (playing && this.jerryAI && !J.hidden && J.stun <= 0 && J.abCd <= 0 && J.onGround && this.jerryAI.state === 'flee' && d2(J.p, T.p) < 10 && Math.random() < dt * 1.5) this.useAbility(J);
+    if (playing && this.tomAI && T.stun <= 0 && T.abCd <= 0 && T.onGround && ['search', 'patrol'].includes(this.tomAI.state) && Math.random() < dt * .12) this.useAbility(T);
     this.updateSpike(dt);
     this.updateGuide(dt);
 
@@ -599,10 +631,14 @@ export class Match {
     // tuzoqlar
     for (let i = this.traps.length - 1; i >= 0; i--) {
       const tr = this.traps[i]; tr.t -= dt;
-      const victim = tr.type === 'banana' ? T : J;
-      if (playing && (!this.net || victim === P) && !victim.hidden && victim.onGround && d2(victim.p, tr.p) < (tr.type === 'banana' ? 1.2 : .95) && Math.abs(victim.p.y - tr.p.y) < .6) {
+      if (tr.arm > 0) tr.arm -= dt;
+      if (tr.type === 'bomb') PR.tickBomb(tr.mesh, this.time);
+      const victim = tr.type === 'trap' ? J : T, bomb = tr.type === 'bomb';
+      const rad = tr.type === 'banana' ? 1.2 : bomb ? 1.8 : .95;
+      if (playing && !(tr.arm > 0) && (!this.net || victim === P) && !victim.hidden && (bomb || victim.onGround) && d2(victim.p, tr.p) < rad && Math.abs(victim.p.y - tr.p.y) < (bomb ? 1.8 : .6)) {
         if (tr.type === 'banana') { T.stun = 3; T.v.set(Math.sin(T.yaw) * 8, 5, Math.cos(T.yaw) * 8); SND.play('slip'); if (this.me === 'jerry') hud.toast("Tom sirpanib ketdi!", 'green'); }
-        else { J.stun = 2.5; J.v.set(0, 0, 0); SND.play('trap'); hud.toast(this.me === 'tom' ? 'Jerry tuzoqqa tushdi!' : 'Tuzoq!', this.me === 'tom' ? 'gold' : 'red'); }
+        else if (bomb) this.bombHit(tr.p);
+        else { J.stun = 3; J.v.set(0, 0, 0); J.p.x = tr.p.x; J.p.z = tr.p.z; SND.play('trap'); hud.toast(this.me === 'tom' ? 'Jerry qopqonga tushdi! (3 s)' : 'Qopqon! 3 soniya qimirlay olmaysan', this.me === 'tom' ? 'gold' : 'red'); if (this.net) this.netSend({ type: 'trapped' }); }
         PR.poof(tr.p.clone().setY(.4), '#ffe9a8', 10, .6);
         if (this.net) this.netSend({ type: 'propgone', id: tr.id });
         gfx.scene.remove(tr.mesh); this.traps.splice(i, 1); continue;
@@ -639,6 +675,7 @@ export class Match {
       if (this.phase === 'end') a = (e.kind === 'tom') === this.tomWon ? 'celebrate' : 'stunned';
       e.model.lookPitch = e === P && !P.hidden ? clamp(-this.cam.pitch * .6, -.5, .45) : 0;
       e.model.update(dt, a, Math.hypot(e.v.x, e.v.z), 0, e === P && P.backward && a !== 'idle');
+      if (e === T) { this.birds.visible = a === 'dazed'; if (this.birds.visible) PR.updateBirds(this.birds, this.time); }
     }
     const near = this.camNear ? .3 : 1;
     J.model.setOpacity(Math.min(this.me === 'jerry' ? near : 1, J.invis > 0 ? .28 : J.invul > 0 ? (Math.sin(this.time * 30) > 0 ? 1 : .35) : 1));
@@ -697,6 +734,7 @@ export class Match {
     hud.danger(me === 'jerry' && this.phase === 'play' && !J.hidden && ts === 'chase' && dist < 11);
     hud.stats({ time: this.phase === 'intro' ? MATCH_TIME : this.left, lives: this.lives, maxLives: LIVES, cheese: this.cheeseN, stamina: P.stam, me, catches: this.catches });
     hud.hotbar(me, this.inv, this.active);
+    hud.ability(ABIL[me], P.abCd);
     const room = this.world.roomAt(P.p.x, P.p.z); hud.room(room ? room.name : '');
     // yordamchi matn
     let pr = '';
@@ -711,22 +749,47 @@ export class Match {
     hud.hideBar(!!J.hidden && me === 'jerry', 1 - this.hideT / HIDE_MAX);
     hud.crosshair(this.isFP());
     // xarita
-    const jSeen = me === 'jerry' || this.radarT > 0 || this.time - this.lastJSeenT < 1;
+    // Tom uchun: Jerry shu xonada yoki yonidagi xonada bo'lsa, boshi ko'rinadi
+    const nearJ = me === 'tom' && this.phase === 'play' && !J.hidden && !(J.invis > 0 || J.invisR) && this.nearRoom(T.p, J.p);
+    this.jerryMark(nearJ && !this.tomSees);
+    if (nearJ && !this.nearWas && this.time - this.nearJT > 8) { this.nearJT = this.time; hud.say('🐭 Jerry yaqin xonada!', 'gold', 1.8); }
+    this.nearWas = nearJ;
+    const jSeen = me === 'jerry' || this.radarT > 0 || nearJ || this.time - this.lastJSeenT < 1;
     const md = {
       me, jp: J.hidden && me === 'tom' && this.radarT <= 0 ? (this.lastJPos || J.p) : J.p, tp: T.p, yaw: this.cam.yaw,
       showJ: me === 'jerry' || jSeen || this.time - this.lastJSeenT < 8, jFaded: me === 'tom' && !jSeen, jUnknown: me === 'tom' && !jSeen,
       showT: true, tFaded: me === 'jerry' && !this.tomSees,
       hides: this.world.hides, guide: this.guide && this.guide.sp, cheese: this.cheese.items,
       hiddenSpot: me === 'jerry' ? J.hidden : (this.radarT > 0 ? J.hidden : null), time: this.time,
-      marks: this.traps.map(t => ({ x: t.p.x, z: t.p.z, c: t.type === 'banana' ? '#fff176' : '#bcaaa4' })),
+      marks: this.traps.map(t => ({ x: t.p.x, z: t.p.z, c: t.type === 'banana' ? '#fff176' : t.type === 'bomb' ? '#ff5a1f' : '#bcaaa4' })),
     };
     if (jSeen && !J.hidden) this.lastJPos = J.p.clone();
     hud.drawMap(md);
     if (this.bigOn) hud.drawBig(md, this.world.rooms);
   }
 
+  // ikki joy bir xil yoki devori umumiy xonadami (hovlida — 24 m ichida)
+  nearRoom(a, b) {
+    const W = this.world, ra = W.roomAt(a.x, a.z), rb = W.roomAt(b.x, b.z);
+    if (!ra || !rb) return d2(a, b) < 24;
+    const ia = W.rooms.indexOf(ra), ib = W.rooms.indexOf(rb);
+    return Math.abs(ia % COLS - ib % COLS) + Math.abs(Math.floor(ia / COLS) - Math.floor(ib / COLS)) <= 1;
+  }
+  // ekranda Jerry boshi (devor orqasidan ham) — ekrandan tashqarida bo'lsa chetida
+  jerryMark(on) {
+    if (!on) { hud.jerryMark(false); return; }
+    const J = this.jerry, v = new THREE.Vector3(J.p.x, J.p.y + J.h + .6, J.p.z).project(gfx.camera);
+    let x = v.x, y = v.y;
+    if (v.z > 1) { x = -x; y = -y; const k = 1 / Math.max(Math.abs(x), Math.abs(y), 1e-3); x *= k; y *= k; }
+    const edge = Math.abs(x) > .92 || Math.abs(y) > .86 || v.z > 1;
+    x = clamp(x, -.92, .92); y = clamp(y, -.86, .86);
+    hud.jerryMark(true, (x * .5 + .5) * window.innerWidth, (-y * .5 + .5) * window.innerHeight, edge);
+  }
+
   dispose() {
     const c = gfx.renderer.domElement;
+    hud.jerryMark(false);
+    document.getElementById('abil').removeEventListener('pointerdown', this.h.ab);
     if (this.net) { (this.netUn || []).forEach(u => u && u()); this.net.api.leave(this.net.room); const tg = document.getElementById('oppTag'); if (tg) tg.classList.add('hidden'); }
     if (this.touch) this.touch.detach();
     document.getElementById('hotbar').removeEventListener('pointerdown', this.h.hb);

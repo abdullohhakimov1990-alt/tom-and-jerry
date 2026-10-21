@@ -289,6 +289,20 @@ kbd { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 6px
 .stam i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #3fd2ff, #7dffcf); transition: width .1s; }
 .stam.low i { background: #ff6a3d; }
 #hotbar { display: flex; gap: 6px; }
+.hb-row { display: flex; align-items: center; gap: 12px; }
+#abil { position: relative; width: 66px; height: 66px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffcf6a, #ff6a1f 60%, #8a2a00); border: 3px solid #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; box-shadow: 0 0 14px rgba(255,140,40,.8); transition: transform .1s; }
+#abil:active { transform: scale(.92); }
+#abil .ai { font-size: 32px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+#abil .key { position: absolute; left: -4px; top: -4px; background: #222; border: 2px solid #fff; border-radius: 8px; font-size: 12px; font-weight: 800; padding: 0 5px; }
+#abil .an { position: absolute; bottom: -17px; font-size: 11px; font-weight: 800; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+#abil::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(rgba(10,6,20,.78) var(--p, 0%), transparent 0); pointer-events: none; }
+#abil.cd { box-shadow: none; filter: saturate(.5); }
+#abil .cdn { position: absolute; z-index: 2; font-size: 24px; font-weight: 900; text-shadow: 0 2px 3px #000; }
+#jMark { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: jbob 1s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(255,210,0,.9)); }
+#jMark canvas { width: 46px; height: 46px; }
+#jMark span { font-size: 11px; font-weight: 800; background: rgba(0,0,0,.55); border-radius: 6px; padding: 0 5px; margin-top: -4px; }
+#jMark.edge { opacity: .85; } #jMark.edge span::after { content: ' ➜'; }
+@keyframes jbob { 50% { margin-top: -6px; } }
 .slot { position: relative; width: 56px; height: 56px; border-radius: 12px; background: rgba(20,12,30,.7); border: 2px solid rgba(255,255,255,.55); display: flex; align-items: center; justify-content: center; transition: transform .1s; }
 .slot.empty { opacity: .45; }
 .slot.act { transform: scale(1.15); border-color: var(--gold); }
@@ -341,6 +355,7 @@ kbd { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 6px
 #tPause { right: 230px; top: 70px; }
 body.touch .slot { pointer-events: auto; }
 body.touch #hotbar { pointer-events: auto; }
+body.touch #abil { width: 74px; height: 74px; }
 body.touch .hud-bottom { bottom: 4px; }
 body.touch #hPrompt, body.touch .maphint, body.touch #lockHint { display: none !important; }
 body.touch .stam { width: 180px; }

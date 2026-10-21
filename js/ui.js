@@ -206,9 +206,9 @@ ui.renderShop = function () {
     body.querySelectorAll('[data-ie]').forEach(b => b.onclick = () => ui.setIcon(b.dataset.ie));
     body.querySelectorAll('[data-ib]').forEach(b => b.onclick = async () => { const ic = ICONS.find(x => x.id === b.dataset.ib); if (await pay(ic.cur, ic.price, ic.name + ' ikonkasi')) { own.icons[ic.id] = 1; ui.setIcon(ic.id); } });
   } else if (shopTab === 'colors') {
-    body.innerHTML = `<div class="color-grid">${COLORS.map(c => {
-      const has = c.free || own.colors[c.id], eq = app.profile.color === c.id;
-      return `<div class="ccard2 ${eq ? 'eq' : ''}"><div class="nick">${nickHTML(app.profile.nick, c.id)}</div><div class="cn">${c.name}</div>
+    body.innerHTML = `<div class="color-grid">${COLORS.filter(c => !c.admin || app.isAdmin).map(c => {
+      const has = c.free || c.admin || own.colors[c.id], eq = app.profile.color === c.id;
+      return `<div class="ccard2 ${eq ? 'eq' : ''}"><div class="nick">${nickHTML(app.profile.nick, c.id)}</div><div class="cn">${c.admin ? '👑 ' : ''}${c.name}</div>
         ${eq ? '<button class="btn green" disabled>Tanlangan</button>' : has ? `<button class="btn blue" data-ce="${c.id}">Tanlash</button>` : priceBtn(c.cur, c.price, `data-cb="${c.id}"`, c.cur === 'diamond' ? 'blue' : 'gold')}</div>`;
     }).join('')}</div>`;
     body.querySelectorAll('[data-ce]').forEach(b => b.onclick = () => ui.setColor(b.dataset.ce));

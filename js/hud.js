@@ -12,6 +12,8 @@ export function initHud(world) {
     el[k] = $(k);
   el.stamFill = el.hStam.querySelector('i'); el.hideFill = el.hideBar.querySelector('i');
   mctx = el.minimap.getContext('2d'); bigctx = el.bigCanvas.getContext('2d');
+  el.abil = $('abil'); el.jMark = $('jMark');
+  jerryHead(el.jMark.querySelector('canvas').getContext('2d'), 32, 38, 17);
   buildBase(world);
 }
 H.show = on => { el.hud.classList.toggle('hidden', !on); if (!on) { el.bigmap.classList.add('hidden'); H.danger(false); } };
@@ -124,6 +126,22 @@ H.drawBig = function (d, rooms) {
   if (d.showT) tomHead(g, d.tp.x * PPU, d.tp.z * PPU, 16, d.tFaded ? .55 : 1);
   if (d.showJ) jerryHead(g, d.jp.x * PPU, d.jp.z * PPU, 13, d.jFaded ? .5 : 1);
   g.restore();
+};
+// qobiliyat tugmasi (E): qayta tiklanish soati
+H.ability = (A, cd) => {
+  const k = A.id + Math.ceil(cd);
+  if (last.ab === k) return; last.ab = k;
+  el.abil.title = `E — ${A.name}: ${A.desc}`;
+  el.abil.querySelector('.ai').textContent = A.ico;
+  el.abil.querySelector('.an').textContent = A.name;
+  el.abil.classList.toggle('cd', cd > 0);
+  el.abil.style.setProperty('--p', (cd > 0 ? cd / A.cd * 100 : 0) + '%');
+  el.abil.querySelector('.cdn').textContent = cd > 0 ? Math.ceil(cd) : '';
+};
+// yaqin xonadagi Jerry boshi
+H.jerryMark = (on, x, y, edge) => {
+  if (last.jm !== on) { last.jm = on; el.jMark.classList.toggle('hidden', !on); }
+  if (on) { el.jMark.style.left = x + 'px'; el.jMark.style.top = y + 'px'; el.jMark.classList.toggle('edge', !!edge); }
 };
 H.toggleBig = on => el.bigmap.classList.toggle('hidden', !on);
 

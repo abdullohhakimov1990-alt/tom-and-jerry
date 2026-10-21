@@ -62,6 +62,60 @@ export function makeTrap() {
   return g;
 }
 
+// ---------------- bomba (Jerry qobiliyati) ----------------
+export function makeBomb() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(.42, 20, 14), new THREE.MeshPhysicalMaterial({ color: '#1b1c22', roughness: .35, metalness: .3, clearcoat: 1 }));
+  body.position.y = .42; g.add(body);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(.13, .15, .14, 12), new THREE.MeshStandardMaterial({ color: '#8a8f99', metalness: .9, roughness: .3 }));
+  cap.position.y = .86; g.add(cap);
+  const fuse = new THREE.Mesh(new THREE.TorusGeometry(.18, .03, 6, 12, Math.PI * .8), new THREE.MeshStandardMaterial({ color: '#c9a36a', roughness: .9 }));
+  fuse.position.set(.16, .93, 0); fuse.rotation.z = Math.PI * .1; g.add(fuse);
+  const shine = new THREE.Mesh(new THREE.SphereGeometry(.09, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .5 }));
+  shine.position.set(-.18, .62, .26); g.add(shine);
+  const spark = new THREE.Sprite(new THREE.SpriteMaterial({ map: TX.softDot(), color: '#ffb02e', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  spark.position.set(.33, 1.0, 0); spark.scale.setScalar(.5); g.add(spark);
+  g.userData.spark = spark; g.userData.body = body;
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+export function tickBomb(m, t) {
+  const s = m.userData.spark; s.scale.setScalar(.35 + Math.random() * .35); s.material.color.setHSL(.08 + Math.random() * .05, 1, .55 + Math.random() * .2);
+  m.userData.body.scale.setScalar(1 + Math.max(0, Math.sin(t * 9)) * .05);
+}
+// portlash: olov + tutun + uchqunlar
+export function boom(pos) {
+  const p = pos.clone(); p.y += .6;
+  poof(p, '#ffb22e', 18, 1.7); poof(p, '#ff5a1f', 12, 1.3); poof(p.clone().setY(p.y + .5), '#4a4a4a', 16, 1.8); poof(p, '#fff3b0', 8, .9);
+}
+// boshi atrofida aylanib uchadigan qushchalar (hushsiz Tom)
+export function makeBirds() {
+  const g = new THREE.Group(), birds = [];
+  const body = new THREE.MeshStandardMaterial({ color: '#ffd52e', roughness: .5 }), beakM = new THREE.MeshStandardMaterial({ color: '#ff8a00' }), eyeM = new THREE.MeshBasicMaterial({ color: '#111' });
+  for (let i = 0; i < 3; i++) {
+    const b = new THREE.Group();
+    const bd = new THREE.Mesh(new THREE.SphereGeometry(.17, 12, 10), body); bd.scale.set(1, .9, 1.2); b.add(bd);
+    const hd = new THREE.Mesh(new THREE.SphereGeometry(.12, 10, 8), body); hd.position.set(0, .12, .16); b.add(hd);
+    const bk = new THREE.Mesh(new THREE.ConeGeometry(.045, .12, 6), beakM); bk.rotation.x = Math.PI / 2; bk.position.set(0, .11, .3); b.add(bk);
+    for (const s of [-1, 1]) {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(.025, 6, 4), eyeM); e.position.set(s * .06, .17, .26); b.add(e);
+      const w = new THREE.Mesh(new THREE.SphereGeometry(.13, 8, 6), body); w.scale.set(1.3, .25, .8); w.position.set(s * .17, .03, 0); b.add(w); b.userData['w' + s] = w;
+    }
+    g.add(b); birds.push(b);
+  }
+  g.userData.birds = birds; g.visible = false;
+  return g;
+}
+export function updateBirds(g, t) {
+  g.userData.birds.forEach((b, i) => {
+    const a = t * 3.2 + i * Math.PI * 2 / 3;
+    b.position.set(Math.cos(a) * .85, Math.sin(t * 6 + i) * .1, Math.sin(a) * .85);
+    b.rotation.y = -a; // uchish yo'nalishiga qaraydi
+    const f = Math.sin(t * 28 + i) * .6;
+    b.userData['w-1'].rotation.z = f; b.userData.w1.rotation.z = -f;
+  });
+}
+
 // ---------------- yo'l ko'rsatkich (yashil nuqtalar) ----------------
 export function makeGuide() {
   const N = 60;

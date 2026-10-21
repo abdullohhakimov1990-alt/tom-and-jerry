@@ -121,10 +121,16 @@ export const ITEMS = [
   { id: 'magnet', for: 'jerry', name: 'Sir magniti', desc: '15 soniya sirlarni o\'ziga tortadi', cur: 'gold', price: 3, pack: { n: 10, cur: 'diamond', price: 1 }, col: '#ef5350' },
   // Tom
   { id: 'radar', for: 'tom', name: 'Radar', desc: "6 soniya Jerry xaritada ko'rinadi", cur: 'gold', price: 4, pack: { n: 5, cur: 'diamond', price: 1 }, col: '#66bb6a' },
-  { id: 'trap', for: 'tom', name: "Sichqon tuzog'i", desc: "Qo'y — Jerry bossa 2.5 s qotib qoladi", cur: 'gold', price: 3, pack: { n: 10, cur: 'diamond', price: 1 }, col: '#bcaaa4' },
+  { id: 'trap', for: 'tom', name: "Sichqon tuzog'i", desc: "Qo'y — Jerry bossa 3 s qotib qoladi", cur: 'gold', price: 3, pack: { n: 10, cur: 'diamond', price: 1 }, col: '#bcaaa4' },
   { id: 'claws', for: 'tom', name: 'Tez panjalar', desc: '8 soniya 30% tezroq', cur: 'gold', price: 3, pack: { n: 10, cur: 'diamond', price: 1 }, col: '#ffa726' },
   { id: 'sniff', for: 'tom', name: 'Hidlov burni', desc: "Jerry yashiringan joyni ko'rsatadi", cur: 'gold', price: 5, pack: { n: 5, cur: 'diamond', price: 1 }, col: '#ec407a' },
 ];
+
+// ---------------- QOBILIYATLAR (bepul, E tugmasi, qayta tiklanadi) ----------------
+export const ABIL = {
+  jerry: { id: 'bomb', name: 'Bomba', ico: '💣', cd: 18, desc: "Tagingga bomba qo'yadi — Tom yaqinlashsa portlaydi va 3 s hushsiz o'tirib qoladi" },
+  tom: { id: 'trap', name: 'Qopqon', ico: '🪤', cd: 18, desc: "Tagingga qopqon qo'yadi — Jerry bossa 3 s ushlanib qoladi" },
+};
 
 // ---------------- MUSIQA ----------------
 export const MUSIC = [
@@ -178,9 +184,10 @@ export const COLORS = [
   { id: 'fire', name: 'Olov', cur: 'diamond', price: 6 },
   { id: 'ice', name: 'Muz', cur: 'diamond', price: 6 },
   { id: 'neon', name: 'Neon', cur: 'diamond', price: 7 },
-  { id: 'rainbow', name: 'Kamalak', cur: 'diamond', price: 8 },
-  { id: 'galaxy', name: "Galaktika (ko'k-binafsha-qora)", cur: 'diamond', price: 10 },
-  { id: 'royal', name: 'Shohona', cur: 'diamond', price: 12 },
+  // ko'p rangli — sotilmaydi, faqat adminlar ishlatadi
+  { id: 'rainbow', name: 'Kamalak', admin: true },
+  { id: 'galaxy', name: "Galaktika (ko'k-binafsha-qora)", admin: true },
+  { id: 'royal', name: 'Shohona', admin: true },
 ];
 
 export const RAR_NAME = { common: 'Oddiy', rare: 'Nodir', epic: 'Epik', legend: 'Afsonaviy' };
