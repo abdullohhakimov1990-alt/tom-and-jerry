@@ -140,6 +140,8 @@ kbd { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 6px
 .scard .thumbs img, .scard .thumbs .ph { width: 50%; aspect-ratio: 1; border-radius: 10px; background: radial-gradient(#5b3d8a, #22123a); display: block; object-fit: cover; }
 .scard h4 { font-size: 18px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .rar { font-size: 11px; font-weight: 800; padding: 1px 8px; border-radius: 8px; text-transform: uppercase; letter-spacing: .5px; }
+.rar.owner { background: linear-gradient(90deg, #ff004c, #ffd700, #00d5ff, #b000ff); color: #fff; text-shadow: 0 1px 2px #000; }
+.icard.owner img { box-shadow: 0 0 14px rgba(255,215,0,.9); }
 .rar.common { background: #78909c; } .rar.rare { background: #1e88e5; } .rar.epic { background: #8e24aa; } .rar.legend { background: linear-gradient(90deg, #ff8f00, #ffd54f); color: #3a2400; }
 .buyrow { display: flex; gap: 6px; }
 .buyrow .btn { flex: 1; font-size: 13px; padding: 5px 6px; display: flex; align-items: center; justify-content: center; gap: 4px; border-radius: 10px; }
@@ -203,6 +205,7 @@ kbd { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 6px
 
 /* ---------------- nik ranglari ---------------- */
 .nc-white { color: #ffffff; }
+.nc-orange { color: #ff9a2e; } .nc-purple { color: #b36bff; } .nc-cyan { color: #3ff0ff; } .nc-black { color: #111; text-shadow: 0 0 2px #fff, 0 0 4px rgba(255,255,255,.8); }
 .nc-red { color: #ff4d4d; } .nc-green { color: #3ddc63; } .nc-blue { color: #3fa2ff; } .nc-yellow { color: #ffe23a; } .nc-pink { color: #ff79c6; }
 [class*="nc-"].grad { -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; background-size: 200% auto; }
 .nc-sunset { background-image: linear-gradient(90deg, #ff512f, #f09819, #ff5e62); }

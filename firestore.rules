@@ -24,7 +24,10 @@ service cloud.firestore {
         && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15;
       allow update: if signedIn() && me() == uid
         && request.resource.data.pid == resource.data.pid
-        && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15;
+        && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15
+        && (request.resource.data.get('icon', '') != 'owner' || isSuper())
+        && (!(request.resource.data.get('color', 'white') in ['sunset', 'goldshine', 'toxic', 'bloodnight', 'pearl', 'fire', 'ice', 'neon', 'rainbow', 'galaxy', 'royal'])
+            || request.resource.data.get('color', 'white') == resource.data.get('color', 'white') || isAdmin());
     }
 
     // ID raqam -> uid (takrorlanmas ID uchun)

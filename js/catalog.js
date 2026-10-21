@@ -169,6 +169,8 @@ export const ICONS = [
   { id: 'j_galaktika', name: 'Galaktika Jerry', char: 'jerry', set: 'galaktika', bg: ['#b388ff', '#0a0020'], rar: 'legend', cur: 'diamond', price: 10 },
   { id: 't_oltin', name: 'Oltin Tom', char: 'tom', set: 'oltin', bg: ['#fff8e1', '#ff8f00'], rar: 'legend', cur: 'diamond', price: 11 },
   { id: 't_shoh', name: 'Shoh Tom', char: 'tom', set: 'shoh', bg: ['#ffd54f', '#4a148c'], rar: 'legend', cur: 'diamond', price: 12 },
+  // yagona — faqat o'yin egasi (Super Admin) uchun, sotilmaydi
+  { id: 'owner', name: "O'yin egasi", char: 'tom', set: 'shoh', bg: ['#fff3c4', '#1a0033'], rar: 'owner', owner: true },
 ];
 
 // ---------------- NIK RANGLARI ----------------
@@ -179,18 +181,22 @@ export const COLORS = [
   { id: 'blue', name: "Ko'k", cur: 'gold', price: 5 },
   { id: 'yellow', name: 'Sariq', cur: 'gold', price: 6 },
   { id: 'pink', name: 'Pushti', cur: 'gold', price: 8 },
-  { id: 'sunset', name: 'Shafaq', cur: 'gold', price: 15 },
-  { id: 'goldshine', name: 'Yaltiroq oltin', cur: 'gold', price: 30 },
-  { id: 'toxic', name: 'Zahar', cur: 'diamond', price: 4 },
-  { id: 'bloodnight', name: 'Qora-qizil', cur: 'diamond', price: 4 },
-  { id: 'pearl', name: 'Marvarid (oq dur)', cur: 'diamond', price: 5 },
-  { id: 'fire', name: 'Olov', cur: 'diamond', price: 6 },
-  { id: 'ice', name: 'Muz', cur: 'diamond', price: 6 },
-  { id: 'neon', name: 'Neon', cur: 'diamond', price: 7 },
-  // ko'p rangli — sotilmaydi, faqat adminlar ishlatadi
+  { id: 'orange', name: "To'q sariq", cur: 'gold', price: 8 },
+  { id: 'purple', name: 'Binafsha', cur: 'gold', price: 10 },
+  { id: 'cyan', name: 'Moviy', cur: 'gold', price: 10 },
+  { id: 'black', name: 'Qora', cur: 'diamond', price: 2 },
+  // ko'p rangli (rang-barang) — sotilmaydi, faqat o'yin egasi va adminlar ishlatadi
+  { id: 'sunset', name: 'Shafaq', admin: true },
+  { id: 'goldshine', name: 'Yaltiroq oltin', admin: true },
+  { id: 'toxic', name: 'Zahar', admin: true },
+  { id: 'bloodnight', name: 'Qora-qizil', admin: true },
+  { id: 'pearl', name: 'Marvarid (oq dur)', admin: true },
+  { id: 'fire', name: 'Olov', admin: true },
+  { id: 'ice', name: 'Muz', admin: true },
+  { id: 'neon', name: 'Neon', admin: true },
   { id: 'rainbow', name: 'Kamalak', admin: true },
   { id: 'galaxy', name: "Galaktika (ko'k-binafsha-qora)", admin: true },
   { id: 'royal', name: 'Shohona', admin: true },
 ];
 
-export const RAR_NAME = { common: 'Oddiy', rare: 'Nodir', epic: 'Epik', legend: 'Afsonaviy' };
+export const RAR_NAME = { common: 'Oddiy', rare: 'Nodir', epic: 'Epik', legend: 'Afsonaviy', owner: 'Yagona' };

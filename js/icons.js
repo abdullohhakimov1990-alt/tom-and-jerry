@@ -4,7 +4,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { makeCharacter } from './models.js';
 import { ICONS, SETS } from './catalog.js';
 
-const VER = 'tj_portraits_v5';
+const VER = 'tj_portraits_v6';
 export const iconURL = {};     // ikonka id -> dataURL
 export const skinURL = {};     // 'jerry:ninja' -> dataURL
 let cache = null, R = null, scene, cam;
@@ -51,6 +51,53 @@ function portrait(kind, setId, size, full) {
   return c;
 }
 
+// o'yin egasi ikonkasi: Shoh Tom va yelkasida Shoh Jerry
+function ownerShot(size) {
+  const t = makeCharacter('tom', 'shoh'), j = makeCharacter('jerry', 'shoh');
+  for (const ch of [t, j]) { ch.root.traverse(o => { if (o.material && o.material.isMeshStandardMaterial) o.material.envMapIntensity = .8; }); scene.add(ch.root); }
+  t.update(.4, 'idle'); j.update(.4, 'wave');
+  t.root.rotation.y = .28; j.root.position.set(1.05, 2.05, .5); j.root.rotation.y = -.3; j.root.scale.setScalar(1.15);
+  scene.updateMatrixWorld(true);
+  const th = new THREE.Vector3(), jh = new THREE.Vector3(); t.rig.head.getWorldPosition(th); j.rig.head.getWorldPosition(jh);
+  const mid = th.clone().lerp(jh, .45);
+  cam.position.set(mid.x + .2, mid.y + .2, mid.z + 6.4); cam.lookAt(mid.x, mid.y - .1, mid.z);
+  R.setSize(size, size); R.render(scene, cam);
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  c.getContext('2d').drawImage(R.domElement, 0, 0);
+  for (const ch of [t, j]) { scene.remove(ch.root); ch.dispose(); }
+  return c;
+}
+function crown(g, x, y, w) {
+  const h = w * .62;
+  const gr = g.createLinearGradient(x, y - h, x, y); gr.addColorStop(0, '#fff6b0'); gr.addColorStop(.5, '#ffd700'); gr.addColorStop(1, '#b8860b');
+  g.fillStyle = gr; g.strokeStyle = '#5a3a00'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(x - w / 2, y); g.lineTo(x - w / 2, y - h * .55); g.lineTo(x - w / 4, y - h * .2); g.lineTo(x, y - h); g.lineTo(x + w / 4, y - h * .2); g.lineTo(x + w / 2, y - h * .55); g.lineTo(x + w / 2, y); g.closePath(); g.fill(); g.stroke();
+  for (const [gx, col] of [[-w / 4, '#ff1744'], [0, '#00e5ff'], [w / 4, '#76ff03']]) { g.fillStyle = col; g.beginPath(); g.arc(x + gx, y - h * .22, w * .07, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
+}
+function composeOwner(ic, shot) {
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d');
+  const gr = g.createRadialGradient(S * .5, S * .42, 8, S * .5, S * .5, S * .78);
+  gr.addColorStop(0, '#fff3c4'); gr.addColorStop(.35, '#ff9d00'); gr.addColorStop(.7, '#7a00c8'); gr.addColorStop(1, '#14002b');
+  g.fillStyle = gr; g.fillRect(0, 0, S, S);
+  g.save(); g.translate(S / 2, S * .45); g.globalAlpha = .22; g.fillStyle = '#fff8d0';
+  for (let i = 0; i < 16; i++) { g.rotate(Math.PI / 8); g.beginPath(); g.moveTo(0, 0); g.lineTo(-14, -S); g.lineTo(14, -S); g.closePath(); g.fill(); }
+  g.restore();
+  for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,${220 + Math.random() * 35 | 0},${150 + Math.random() * 100 | 0},${.4 + Math.random() * .6})`; const x = Math.random() * S, y = Math.random() * S, r = Math.random() * 2.4 + .6; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+  g.drawImage(shot, 0, 0, S, S);
+  // kamalak-oltin ramka va burchak toshlari
+  const fg = g.createLinearGradient(0, 0, S, S);
+  ['#ff004c', '#ffd700', '#fff6c2', '#00d5ff', '#b000ff', '#ffd700'].forEach((col, i, a) => fg.addColorStop(i / (a.length - 1), col));
+  g.strokeStyle = fg; g.lineWidth = 16; g.strokeRect(8, 8, S - 16, S - 16);
+  g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.strokeRect(17, 17, S - 34, S - 34);
+  for (const [x, y] of [[12, 12], [S - 12, 12], [12, S - 12], [S - 12, S - 12]]) {
+    g.fillStyle = '#00e5ff'; g.strokeStyle = '#fff'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x, y - 11); g.lineTo(x + 9, y); g.lineTo(x, y + 11); g.lineTo(x - 9, y); g.closePath(); g.fill(); g.stroke();
+  }
+  crown(g, S / 2, 46, 70);
+  return c.toDataURL('image/jpeg', .9);
+}
+
 const FRAME = { common: ['#cfd8dc', '#78909c'], rare: ['#64b5f6', '#1565c0'], epic: ['#ce93d8', '#6a1b9a'], legend: ['#ffe082', '#ff8f00'] };
 function compose(ic, shot) {
   const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
@@ -79,7 +126,7 @@ export async function buildIcons(onProgress) {
     setup();
     for (let k = 0; k < need.length; k++) {
       const ic = need[k];
-      cache['i:' + ic.id] = compose(ic, portrait(ic.char, ic.set, 256, false));
+      cache['i:' + ic.id] = ic.owner ? composeOwner(ic, ownerShot(256)) : compose(ic, portrait(ic.char, ic.set, 256, false));
       onProgress && onProgress((k + 1) / need.length);
       await new Promise(r => setTimeout(r, 0));
     }

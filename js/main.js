@@ -48,7 +48,7 @@ function mergeData(d) {
 function applyAdmin(d) {
   if (!app.isAdmin || !d) return;
   for (const st of SETS) { d.owned.skins['jerry:' + st.id] = 1; d.owned.skins['tom:' + st.id] = 1; }
-  for (const i of ICONS) d.owned.icons[i.id] = 1;
+  for (const i of ICONS) if (!i.owner || app.isSuper) d.owned.icons[i.id] = 1;
   for (const c of COLORS) d.owned.colors[c.id] = 1;
   for (const m of MUSIC) d.owned.music[m.id] = 1;
   for (const it of ITEMS) d.inv[it.id] = Math.max(99, d.inv[it.id] || 0);
@@ -144,7 +144,11 @@ function enterMenu(acc) {
   // rolni serverdan aniqlash (Super Admin / Admin / O'yinchi)
   app.backend.getRole().then(role => {
     app.role = role; app.isSuper = role === 'super'; app.isAdmin = role !== 'player';
+    const firstOwner = app.isSuper && !app.data.owned.icons.owner;
     applyAdmin(app.data); ui.renderTop(); if (app.isAdmin) app.saveSoon();
+    if (firstOwner) { ui.setIcon('owner'); ui.toast("👑 Sizga yagona \"O'yin egasi\" ikonkasi berildi!"); }
+    // yagona ikonka faqat egasida
+    if (!app.isSuper && app.profile.icon === 'owner') ui.setIcon('j_classic');
     // admin ranglari oddiy o'yinchida qolmasin
     const col = COLORS.find(c => c.id === app.profile.color);
     if (!app.isAdmin && col && col.admin) ui.setColor('white');

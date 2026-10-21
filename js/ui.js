@@ -198,9 +198,9 @@ ui.renderShop = function () {
     body.querySelectorAll('[data-me]').forEach(b => b.onclick = () => { d.equip.music = b.dataset.me; SND.stopMusic(); SND.playMusic(d.equip.music); app.saveSoon(); ui.renderShop(); });
     body.querySelectorAll('[data-mb]').forEach(b => b.onclick = async () => { const m = MUSIC.find(x => x.id === b.dataset.mb); if (await pay(m.cur, m.price, m.name + ' musiqasi')) { own.music[m.id] = 1; d.equip.music = m.id; SND.stopMusic(); SND.playMusic(m.id); ui.renderShop(); } });
   } else if (shopTab === 'icons') {
-    body.innerHTML = `<div class="icon-grid">${ICONS.map(ic => {
-      const has = ic.free || own.icons[ic.id], eq = app.profile.icon === ic.id;
-      return `<div class="icard ${eq ? 'eq' : ''}"><img src="${iconURL[ic.id]}" alt=""><div class="nm">${ic.name}</div><span class="rar ${ic.rar}">${RAR_NAME[ic.rar]}</span>
+    body.innerHTML = `<div class="icon-grid">${ICONS.filter(ic => !ic.owner || app.isSuper).map(ic => {
+      const has = ic.free || own.icons[ic.id] || (ic.owner && app.isSuper), eq = app.profile.icon === ic.id;
+      return `<div class="icard ${eq ? 'eq' : ''} ${ic.owner ? 'owner' : ''}"><img src="${iconURL[ic.id]}" alt=""><div class="nm">${ic.name}</div><span class="rar ${ic.rar}">${RAR_NAME[ic.rar]}</span>
         ${eq ? '<button class="btn green" disabled>Qo\'yilgan</button>' : has ? `<button class="btn blue" data-ie="${ic.id}">Qo'yish</button>` : priceBtn(ic.cur, ic.price, `data-ib="${ic.id}"`, ic.cur === 'diamond' ? 'blue' : 'gold')}</div>`;
     }).join('')}</div>`;
     body.querySelectorAll('[data-ie]').forEach(b => b.onclick = () => ui.setIcon(b.dataset.ie));
@@ -248,7 +248,7 @@ ui.renderShop = function () {
     body.querySelectorAll('[data-xd]').forEach(b => b.onclick = async () => { const n = +b.dataset.xd; if (n < 1 || w.gold < n * RATE.GOLD_PER_DIAMOND) return; if (!(await ui.confirm(`${n * RATE.GOLD_PER_DIAMOND} oltinni ${n} olmosga almashtirasizmi?`))) return; w.gold -= n * RATE.GOLD_PER_DIAMOND; w.diamond += n; SND.play('buy'); app.saveSoon(); ui.renderShop(); ui.toast(`+${n} olmos`); });
   }
 };
-ui.setIcon = function (id) { app.profile.icon = id; app.data.equip.icon = id; app.backend.updateProfile({ icon: id }).catch(() => { }); app.saveSoon(); SND.play('click'); ui.renderTop(); if (!$('shop').classList.contains('hidden')) ui.renderShop(); if (!$('profile').classList.contains('hidden')) ui.renderProfile(); };
+ui.setIcon = function (id) { const ic = ICONS.find(i => i.id === id); if (ic && ic.owner && !app.isSuper) return; app.profile.icon = id; app.data.equip.icon = id; app.backend.updateProfile({ icon: id }).catch(() => { }); app.saveSoon(); SND.play('click'); ui.renderTop(); if (!$('shop').classList.contains('hidden')) ui.renderShop(); if (!$('profile').classList.contains('hidden')) ui.renderProfile(); };
 ui.setColor = function (id) { app.profile.color = id; app.data.equip.color = id; app.backend.updateProfile({ color: id }).catch(() => { }); app.saveSoon(); SND.play('click'); ui.renderTop(); if (!$('shop').classList.contains('hidden')) ui.renderShop(); if (!$('profile').classList.contains('hidden')) ui.renderProfile(); };
 
 // ---------------- do'stlar ----------------
@@ -301,7 +301,7 @@ ui.openProfile = function () { ui.open('profile'); ui.renderProfile(); SND.play(
 ui.renderProfile = function () {
   const p = app.profile, d = app.data;
   $('prIcon').src = iconURL[p.icon]; $('prNick').innerHTML = nickHTML(p.nick, p.color); $('prId').textContent = p.pid; $('prNickInput').value = p.nick;
-  $('prIcons').innerHTML = ICONS.filter(ic => ic.free || d.owned.icons[ic.id]).map(ic => `<div class="icard ${p.icon === ic.id ? 'eq' : ''}" data-pi="${ic.id}" style="cursor:pointer"><img src="${iconURL[ic.id]}" alt=""><div class="nm">${ic.name}</div></div>`).join('')
+  $('prIcons').innerHTML = ICONS.filter(ic => (ic.free || d.owned.icons[ic.id]) && (!ic.owner || app.isSuper)).map(ic => `<div class="icard ${p.icon === ic.id ? 'eq' : ''}" data-pi="${ic.id}" style="cursor:pointer"><img src="${iconURL[ic.id]}" alt=""><div class="nm">${ic.name}</div></div>`).join('')
     + `<div class="icard" style="justify-content:center;cursor:pointer" id="prMoreIcons"><div class="nm">+ Do'kondan<br>ko'proq</div></div>`;
   $('prColors').innerHTML = COLORS.filter(c => c.free || d.owned.colors[c.id]).map(c => `<div class="ccard2 ${p.color === c.id ? 'eq' : ''}" data-pc="${c.id}" style="cursor:pointer"><div class="nick">${nickHTML(p.nick, c.id)}</div></div>`).join('');
   document.querySelectorAll('[data-pi]').forEach(e => e.onclick = () => ui.setIcon(e.dataset.pi));
