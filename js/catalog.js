@@ -10,6 +10,9 @@ export const NICK_MIN = 3, NICK_MAX = 15;
 export const SUPER_ADMINS = ['abdullohhakimov1990@gmail.com'];
 export const ADMIN_WALLET = { gold: 1000, diamond: 100 };
 export const GIFT_MAX = 100000;
+// Umumiy tozalash: epoch oshirilsa, hamma akkauntlar (keepPids va Super Admindan tashqari)
+// keyingi kirishda yangi akkauntdek boshlanadi — oltin, olmos, skinlar, buyumlar, statistika.
+export const RESET = { epoch: 1, keepPids: ['20789807'] };
 
 // ---------------- DONAT (haqiqiy pulga) ----------------
 // Kurs: 30 olmos = 1$, 200 oltin = 0.30$ (uzs — so'mdagi qiymati).

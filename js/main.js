@@ -9,7 +9,7 @@ import { makeStage } from './stage.js';
 import { ui } from './ui.js';
 import { Match } from './match.js';
 import { initOnline } from './online.js';
-import { START_WALLET, CHAR_PRICE, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS, GIFT_MAX } from './catalog.js';
+import { START_WALLET, CHAR_PRICE, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS, GIFT_MAX, RESET, SUPER_ADMINS } from './catalog.js';
 import * as SND from './audio.js';
 import { isTouch, goLandscape } from './touch.js';
 
@@ -28,7 +28,7 @@ app.saveSettings = () => { try { localStorage.setItem('tj_settings', JSON.string
 // ---------------- o'yinchi ma'lumotlari ----------------
 function defaultData() {
   return {
-    v: 1, wallet: { ...START_WALLET }, char: 'jerry',
+    v: 1, epoch: RESET.epoch, wallet: { ...START_WALLET }, char: 'jerry',
     owned: { skins: { 'jerry:classic': 1, 'tom:classic': 1 }, icons: { j_classic: 1, t_classic: 1 }, colors: { white: 1 }, music: { classic: 1 } },
     equip: { skin: { jerry: 'classic', tom: 'classic' }, music: 'classic', icon: 'j_classic', color: 'white' },
     inv: { heart: 1, shield: 1, banana: 2, boots: 1, radar: 1, trap: 1 },
@@ -127,7 +127,19 @@ async function onAuth(user) {
 function enterMenu(acc) {
   app.profile = acc.profile;
   let local = null; try { local = JSON.parse(localStorage.getItem('tj_data_' + app.user.uid)); } catch (e) { }
-  app.data = mergeData(acc.data || local);
+  const raw = acc.data || local, stale = !!raw && (raw.epoch || 0) < RESET.epoch; // mergeData'dan oldin tekshiriladi
+  app.data = mergeData(raw);
+  // umumiy tozalash: eski akkaunt yangidan boshlanadi (o'yin egasi bundan mustasno)
+  const owner = RESET.keepPids.includes(String(app.profile.pid)) || SUPER_ADMINS.includes(String(app.user.email || '').toLowerCase());
+  if (stale) {
+    if (!owner) {
+      app.data = defaultData();
+      app.profile.icon = app.data.equip.icon; app.profile.color = app.data.equip.color;
+      app.backend.updateProfile({ icon: app.profile.icon, color: app.profile.color }).catch(() => { });
+      setTimeout(() => ui.toast("Yangi mavsum! Barcha akkauntlar yangidan boshlandi."), 800);
+    }
+    app.data.epoch = RESET.epoch; app.saveNow();
+  }
   app.role = 'player'; app.isAdmin = false; app.isSuper = false;
   // rolni serverdan aniqlash (Super Admin / Admin / O'yinchi)
   app.backend.getRole().then(role => {
