@@ -12,7 +12,8 @@ export const ADMIN_WALLET = { gold: 1000, diamond: 100 };
 export const GIFT_MAX = 100000;
 // Umumiy tozalash: epoch oshirilsa, hamma akkauntlar (keepPids va Super Admindan tashqari)
 // keyingi kirishda yangi akkauntdek boshlanadi — oltin, olmos, skinlar, buyumlar, statistika.
-export const RESET = { epoch: 1, keepPids: ['20789807'] };
+// at — shu vaqtdan oldin yuborilgan sovg'alar endi hisobga qo'shilmaydi.
+export const RESET = { epoch: 2, at: 1792564120996, keepPids: ['20789807'] };
 
 // ---------------- DONAT (haqiqiy pulga) ----------------
 // Kurs: 30 olmos = 1$, 200 oltin = 0.30$ (uzs — so'mdagi qiymati).

@@ -35,6 +35,8 @@ function defaultData() {
     stats: { games: 0, wins: 0, jerryWins: 0, tomWins: 0, sirTotal: 0, catches: 0 },
   };
 }
+// tozalangan akkaunt: hammasi nol
+function zeroData() { const d = defaultData(); d.wallet = { sir: 0, gold: 0, diamond: 0 }; d.inv = {}; return d; }
 function mergeData(d) {
   const def = defaultData();
   if (!d) return def;
@@ -44,9 +46,10 @@ function mergeData(d) {
   d.equip.skin = Object.assign({}, def.equip.skin, d.equip.skin);
   return d;
 }
-// admin: hamma narsa ochiq, olmos/oltin va buyumlar tugamaydi
+// o'yin egasi (Super Admin): hamma narsa ochiq, olmos/oltin va buyumlar tugamaydi.
+// Oddiy adminlar — faqat unvon va rang-barang nik, boshqa imtiyoz yo'q.
 function applyAdmin(d) {
-  if (!app.isAdmin || !d) return;
+  if (!app.isSuper || !d) return;
   for (const st of SETS) { d.owned.skins['jerry:' + st.id] = 1; d.owned.skins['tom:' + st.id] = 1; }
   for (const i of ICONS) if (!i.owner || app.isSuper) d.owned.icons[i.id] = 1;
   for (const c of COLORS) d.owned.colors[c.id] = 1;
@@ -133,10 +136,10 @@ function enterMenu(acc) {
   const owner = RESET.keepPids.includes(String(app.profile.pid)) || SUPER_ADMINS.includes(String(app.user.email || '').toLowerCase());
   if (stale) {
     if (!owner) {
-      app.data = defaultData();
+      app.data = zeroData();
       app.profile.icon = app.data.equip.icon; app.profile.color = app.data.equip.color;
       app.backend.updateProfile({ icon: app.profile.icon, color: app.profile.color }).catch(() => { });
-      setTimeout(() => ui.toast("Yangi mavsum! Barcha akkauntlar yangidan boshlandi."), 800);
+      setTimeout(() => ui.toast("Yangi mavsum! Barcha akkauntlar noldan boshlandi."), 800);
     }
     app.data.epoch = RESET.epoch; app.saveNow();
   }
@@ -145,6 +148,8 @@ function enterMenu(acc) {
   app.backend.getRole().then(role => {
     app.role = role; app.isSuper = role === 'super'; app.isAdmin = role !== 'player';
     const firstOwner = app.isSuper && !app.data.owned.icons.owner;
+    // Super Admin unvoni hamma ko'rishi uchun profilda (faqat Super Admin yoza oladi)
+    if (app.isSuper && app.profile.role !== 'super') { app.profile.role = 'super'; app.backend.updateProfile({ role: 'super' }).catch(() => { }); }
     applyAdmin(app.data); ui.renderTop(); if (app.isAdmin) app.saveSoon();
     if (firstOwner) { ui.setIcon('owner'); ui.toast("👑 Sizga yagona \"O'yin egasi\" ikonkasi berildi!"); }
     // yagona ikonka faqat egasida
@@ -171,6 +176,8 @@ async function onGifts(list) {
     claiming.add(g.id);
     try {
       const got = await app.backend.claimGift(g.id);
+      const t = got && got.created ? (got.created.toMillis ? got.created.toMillis() : +got.created) : 0;
+      if (got && t && t < RESET.at && !app.isSuper) continue; // eski (tozalashdan oldingi) sovg'a — bekor
       if (got && (got.cur === 'gold' || got.cur === 'diamond') && got.n > 0) {
         app.data.wallet[got.cur] += Math.min(GIFT_MAX, got.n); app.saveSoon(); ui.renderTop();
         const what = `${got.n} ${got.cur === 'gold' ? 'oltin' : 'olmos'}`;
@@ -187,8 +194,8 @@ app.logout = async () => { await app.saveNow(); ui.close('settings'); clearInter
 app.selectChar = async kind => {
   const d = app.data;
   if (d.char === kind) return;
-  const price = app.isAdmin ? 0 : CHAR_PRICE[kind], name = kind === 'tom' ? 'Tom' : 'Jerry';
-  if (app.isAdmin) { d.char = kind; SND.play('buy'); app.stage.celebrate(); app.saveSoon(); ui.renderTop(); return; }
+  const price = app.isSuper ? 0 : CHAR_PRICE[kind], name = kind === 'tom' ? 'Tom' : 'Jerry';
+  if (app.isSuper) { d.char = kind; SND.play('buy'); app.stage.celebrate(); app.saveSoon(); ui.renderTop(); return; }
   if (d.wallet.gold < price) { SND.play('error'); ui.toast(`${name}ni tanlash uchun ${price} oltin kerak (sizda ${d.wallet.gold})`, true); return; }
   if (!(await ui.confirm(`<b>${name}</b>ni tanlaysizmi?<br>Narxi: ${price} <span class="cur gold"></span> oltin`))) return;
   d.wallet.gold -= price; d.char = kind; SND.play('buy'); app.stage.celebrate(); app.saveSoon(); ui.renderTop();

@@ -383,6 +383,9 @@ body.touch .stam { width: 180px; }
   #countdown { font-size: 90px; }
 }
 
+.title-badge { font-size: 11px; font-weight: 900; padding: 1px 7px; border-radius: 8px; vertical-align: middle; letter-spacing: .5px; white-space: nowrap; -webkit-text-fill-color: currentColor; }
+.title-badge.admin { background: linear-gradient(90deg, #2979ff, #00e5ff); color: #fff; border: 1.5px solid #fff; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
+.title-badge.super { background: linear-gradient(90deg, #ff004c, #ffd700, #b000ff); color: #fff; border: 1.5px solid #fff; text-shadow: 0 1px 2px #000; animation: shine 2.5s linear infinite; background-size: 200% 100%; }
 .admin-badge { font-size: 11px; font-weight: 800; background: linear-gradient(90deg, #ffd23f, #ff8a00); color: #3a2400; padding: 1px 7px; border-radius: 8px; vertical-align: middle; -webkit-text-fill-color: #3a2400; }
 
 .inv-ic { width: 90px; height: 90px; border-radius: 16px; }

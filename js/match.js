@@ -263,7 +263,7 @@ export class Match {
         break;
     }
     if (!ok) { SND.play('error'); return; }
-    if (!this.app.isAdmin) this.inv[it.id]--;
+    if (!this.app.isSuper) this.inv[it.id]--;
     this.app.saveSoon();
     this.active[it.id] = true; setTimeout(() => { this.active[it.id] = false; }, 400);
     SND.play('power');
@@ -475,7 +475,7 @@ export class Match {
       const v = new THREE.Vector3(O.p.x, O.p.y + O.h + .5, O.p.z).project(gfx.camera);
       const vis = !O.hidden && v.z < 1 && !(this.me === 'tom' && O.invisR);
       tag.classList.toggle('hidden', !vis);
-      if (vis) { tag.style.left = (v.x * .5 + .5) * window.innerWidth + 'px'; tag.style.top = (-v.y * .5 + .5) * window.innerHeight + 'px'; tag.textContent = (this.net.oppInfo || {}).nick || ''; }
+      if (vis) { tag.style.left = (v.x * .5 + .5) * window.innerWidth + 'px'; tag.style.top = (-v.y * .5 + .5) * window.innerHeight + 'px'; const oi = this.net.oppInfo || {}; tag.textContent = (oi.title === 'super' ? '👑 SUPER ADMIN · ' : oi.title === 'admin' ? '⭐ ADMIN · ' : '') + (oi.nick || ''); }
     }
   }
 

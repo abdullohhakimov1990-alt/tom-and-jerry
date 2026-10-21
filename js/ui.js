@@ -7,6 +7,9 @@ import * as SND from './audio.js';
 
 const $ = id => document.getElementById(id);
 const GRAD = new Set(['sunset', 'goldshine', 'toxic', 'bloodnight', 'pearl', 'fire', 'ice', 'neon', 'rainbow', 'galaxy', 'royal']);
+// unvon: SUPER ADMIN (o'yin egasi) yoki ADMIN — hamma o'yinchilarga ko'rinadi
+export const roleBadge = title => title === 'super' ? ' <span class="title-badge super">👑 SUPER ADMIN</span>' : title === 'admin' ? ' <span class="title-badge admin">⭐ ADMIN</span>' : '';
+const titleOf = (uid, role) => role === 'super' ? 'super' : (app.admins || []).some(a => a.uid === uid) ? 'admin' : '';
 export const nickHTML = (nick, color = 'white') => `<span class="nc-${color}${GRAD.has(color) ? ' grad' : ''}">${esc(nick)}</span>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const curIco = c => `<span class="cur ${c}"></span>`;
@@ -93,8 +96,8 @@ ui.confirm = text => new Promise(res => {
 ui.renderTop = function () {
   const d = app.data, p = app.profile; if (!d || !p) return;
   for (const [id, k] of [['wSir', 'sir'], ['wGold', 'gold'], ['wDia', 'diamond']]) { $(id).textContent = fmt(d.wallet[k]); document.querySelectorAll('.' + id).forEach(e => e.textContent = fmt(d.wallet[k])); }
-  $('pcIcon').src = iconURL[p.icon] || iconURL.j_classic; $('pcNick').innerHTML = nickHTML(p.nick, p.color) + (app.isSuper ? ' <span class="admin-badge">👑 SUPER ADMIN</span>' : app.isAdmin ? ' <span class="admin-badge">⭐ ADMIN</span>' : '');
-  $('btnAdmin').classList.toggle('hidden', !app.isAdmin); $('pcId').textContent = p.pid;
+  $('pcIcon').src = iconURL[p.icon] || iconURL.j_classic; $('pcNick').innerHTML = nickHTML(p.nick, p.color) + roleBadge(app.isSuper ? 'super' : app.isAdmin ? 'admin' : '');
+  $('btnAdmin').classList.toggle('hidden', !app.isSuper); $('pcId').textContent = p.pid;
   $('frMyId').textContent = p.pid;
   $('playAs').textContent = (d.char === 'tom' ? 'Tom' : 'Jerry') + " bo'lib";
   ui.renderCards();
@@ -121,9 +124,9 @@ ui.placeCards = function () {
 // ---------------- sotib olish ----------------
 async function pay(cur, price, what) {
   const w = app.data.wallet;
-  if (!app.isAdmin && w[cur] < price) { SND.play('error'); ui.toast(`${CUR_NAME[cur]} yetarli emas! Kerak: ${price}`, true); return false; }
-  if (!app.isAdmin && (cur === 'diamond' || price >= 20)) { if (!(await ui.confirm(`<b>${what}</b><br>${price} ${curIco(cur)} ${CUR_NAME[cur].toLowerCase()} evaziga sotib olasizmi?`))) return false; }
-  if (!app.isAdmin) w[cur] -= price;
+  if (!app.isSuper && w[cur] < price) { SND.play('error'); ui.toast(`${CUR_NAME[cur]} yetarli emas! Kerak: ${price}`, true); return false; }
+  if (!app.isSuper && (cur === 'diamond' || price >= 20)) { if (!(await ui.confirm(`<b>${what}</b><br>${price} ${curIco(cur)} ${CUR_NAME[cur].toLowerCase()} evaziga sotib olasizmi?`))) return false; }
+  if (!app.isSuper) w[cur] -= price;
   SND.play('buy'); app.saveSoon(); ui.renderTop();
   return true;
 }
@@ -270,9 +273,9 @@ ui.renderFriends = function () {
   $('frList').classList.toggle('hidden', frTab !== 'list'); $('rqList').classList.toggle('hidden', frTab !== 'req');
   const row = (f, acts) => {
     const on = Date.now() - (f.lastSeen || 0) < ONLINE_MS, recent = Date.now() - (f.lastSeen || 0) < 86400000 * 3;
-    const adm = (app.admins || []).some(a => a.uid === f.uid) ? ' <span class="admin-badge">⭐</span>' : '';
+    const adm = roleBadge(titleOf(f.uid, f.role));
     return `<div class="frow"><img src="${iconURL[f.icon] || iconURL.j_classic}" alt=""><div class="fi"><div class="fn">${nickHTML(f.nick || '???', f.color)}${adm}</div>
-      <div class="fs"><span class="dot ${on ? 'on' : recent ? 'recent' : ''}"></span>${acts ? 'ID: ' + esc(f.pid) : ago(f.lastSeen) + ' · ID: ' + esc(f.pid)}</div></div><div class="acts">${acts || `${on ? `<button class="btn small orange" data-inv="${f.uid}" title="O'yinga chaqirish">🎮</button>` : ''}${app.isAdmin ? `<button class="btn small gold" data-gf="${f.uid}" title="Sovg'a">🎁</button>` : ''}<button class="btn small" data-rm="${f.uid}" title="O'chirish">✕</button>`}</div></div>`;
+      <div class="fs"><span class="dot ${on ? 'on' : recent ? 'recent' : ''}"></span>${acts ? 'ID: ' + esc(f.pid) : ago(f.lastSeen) + ' · ID: ' + esc(f.pid)}</div></div><div class="acts">${acts || `${on ? `<button class="btn small orange" data-inv="${f.uid}" title="O'yinga chaqirish">🎮</button>` : ''}${app.isSuper ? `<button class="btn small gold" data-gf="${f.uid}" title="Sovg'a">🎁</button>` : ''}<button class="btn small" data-rm="${f.uid}" title="O'chirish">✕</button>`}</div></div>`;
   };
   const sorted = friends.slice().sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
   const online = sorted.filter(f => Date.now() - (f.lastSeen || 0) < ONLINE_MS), recent = sorted.filter(f => !online.includes(f) && Date.now() - (f.lastSeen || 0) < 86400000 * 3), rest = sorted.filter(f => !online.includes(f) && !recent.includes(f));
@@ -341,20 +344,20 @@ ui.openGift = function (f) {
   $('giftTo').innerHTML = nickHTML(f.nick, f.color);
   const upd = () => {
     document.querySelectorAll('[data-gc]').forEach(b => b.classList.toggle('on', b.dataset.gc === giftCur));
-    $('giftHave').textContent = app.isAdmin ? 'Admin: cheksiz' : `Sizda: ${fmt(app.data.wallet[giftCur])}`;
+    $('giftHave').textContent = app.isSuper ? 'Super Admin: cheksiz' : `Sizda: ${fmt(app.data.wallet[giftCur])}`;
   };
   document.querySelectorAll('[data-gc]').forEach(b => b.onclick = () => { giftCur = b.dataset.gc; upd(); });
   upd();
   $('btnGift').onclick = async () => {
     const n = Math.floor(+$('giftN').value);
-    if (!app.isAdmin) { ui.toast("Sovg'ani faqat admin yubora oladi", true); return; }
+    if (!app.isSuper) { ui.toast("Sovg'ani faqat o'yin egasi yubora oladi", true); return; }
     if (!(n >= 1 && n <= GIFT_MAX)) { ui.toast(`1 dan ${GIFT_MAX} gacha son yozing`, true); return; }
     const w = app.data.wallet;
-    if (!app.isAdmin && w[giftCur] < n) { ui.toast(`${CUR_NAME[giftCur]} yetarli emas`, true); SND.play('error'); return; }
+    if (!app.isSuper && w[giftCur] < n) { ui.toast(`${CUR_NAME[giftCur]} yetarli emas`, true); SND.play('error'); return; }
     $('btnGift').disabled = true;
     try {
       await app.backend.sendGift(giftFriend.uid, giftCur, n);
-      if (!app.isAdmin) w[giftCur] -= n;
+      if (!app.isSuper) w[giftCur] -= n;
       app.saveSoon(); ui.renderTop(); SND.play('buy');
       ui.close('gift'); ui.toast(`🎁 ${giftFriend.nick} ga ${n} ${CUR_NAME[giftCur].toLowerCase()} yuborildi!`);
     } catch (e) { ui.toast(e.message, true); }
@@ -404,7 +407,7 @@ ui.payNotReady = function (what) {
 let adminsList = [];
 ui.setAdmins = list => { adminsList = list || []; if (!$('adminPanel').classList.contains('hidden')) ui.renderAdmins(); ui.renderFriends(); };
 ui.openAdmin = function () {
-  if (!app.isAdmin) return;
+  if (!app.isSuper) return;
   $('apTitle').textContent = app.isSuper ? '👑 Super Admin panel' : '⭐ Admin panel';
   document.querySelectorAll('.super-only').forEach(e => e.classList.toggle('hidden', !app.isSuper));
   ui.open('adminPanel'); ui.renderAdmins(); SND.play('click');
@@ -427,7 +430,7 @@ ui.adminSet = async function (pid, on) {
 };
 ui.adminGift = async function () {
   const m = $('apGiftMsg'), pid = $('apGiftPid').value.trim(), n = Math.floor(+$('apGiftN').value), cur = $('apGiftCur').value;
-  if (!app.isAdmin) return;
+  if (!app.isSuper) return;
   if (!/^\d{8}$/.test(pid)) { m.textContent = 'ID 8 ta raqamdan iborat'; m.className = 'msg bad'; return; }
   if (!(n >= 1 && n <= GIFT_MAX)) { m.textContent = `1 dan ${GIFT_MAX} gacha son yozing`; m.className = 'msg bad'; return; }
   $('btnApGift').disabled = true;

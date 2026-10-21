@@ -1,5 +1,5 @@
 // Do'stlar bilan onlayn o'yin: taklif yuborish, qabul qilish, rollarni tasodifiy taqsimlash va o'yinni boshlash.
-import { ui, nickHTML } from './ui.js';
+import { ui, nickHTML, roleBadge } from './ui.js';
 import { iconURL } from './icons.js';
 import * as SND from './audio.js';
 
@@ -10,7 +10,7 @@ export function initOnline(app) {
   const net = app.backend.net;
   let pending = null, shown = null, unsubInv = null;
 
-  const myInfo = () => ({ nick: app.profile.nick, icon: app.profile.icon, color: app.profile.color, skins: app.data.equip.skin });
+  const myInfo = () => ({ nick: app.profile.nick, icon: app.profile.icon, color: app.profile.color, skins: app.data.equip.skin, title: app.isSuper ? 'super' : app.isAdmin ? 'admin' : '' });
 
   // ---- kelgan takliflar ----
   if (unsubInv) unsubInv();
@@ -23,7 +23,7 @@ export function initOnline(app) {
     if (!inv || app.match || pending) { if (!inv && shown) { ui.close('invite'); shown = null; } return; }
     if (shown && shown.room === inv.room) return;
     shown = inv;
-    $('invNick').innerHTML = nickHTML(inv.nick || "Do'st", inv.color);
+    $('invNick').innerHTML = nickHTML(inv.nick || "Do'st", inv.color) + roleBadge(inv.title);
     $('invIcon').src = iconURL[inv.icon] || iconURL.j_classic;
     ui.open('invite'); SND.play('squeak');
     $('btnInvYes').onclick = () => accept(inv);
