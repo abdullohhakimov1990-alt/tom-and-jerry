@@ -13,6 +13,11 @@ import { COLS, pickRoom } from './house.js';
 import { Voice } from './voice.js';
 import { nickHTML } from './ui.js';
 
+export const BOT_NAMES = {
+  jerry: ['Pishloqxor', 'TezOyoq', 'Kichkintoy', 'Moylovcha', 'Chaqqon', 'Sirchi', 'Nuqta', 'Shamol', 'Zumrad'],
+  tom: ['Panja', 'Mushukboy', 'TundaOv', 'Moylov', 'Yolbars', 'Qoplon', 'Bahodir'],
+};
+export const botName = kind => '[BOT]' + BOT_NAMES[kind][Math.floor(Math.random() * BOT_NAMES[kind].length)];
 const QUICK = ['Salom! 👋', "Yaxshi o'yin! 👍", 'Ushlolmaysan! 😜', 'Qayerdasan? 👀', 'Hahaha 😂', "Yana o'ynaymiz! 🔁"];
 const $ = id => document.getElementById(id);
 
@@ -49,6 +54,8 @@ export class Match {
     // o'yin egasi (Super Admin) Jerry bo'lsa — Tom uni umuman ko'rmaydi (oldida yursa ham)
     this.owner = !!app.isSuper; this.jerry.ghost = this.owner && me === 'jerry';
     this.opp = me === 'jerry' ? this.tom : this.jerry;
+    this.player.nick = app.profile.nick; this.player.isMe = true;
+    this.opp.nick = this.net ? ((this.net.oppInfo || {}).nick || 'Raqib') : botName(this.opp.kind);
     this.cam.yaw = this.player.yaw; this.cam.cur = me === 'jerry' ? 4.2 : 7;
     this.bind();
     if (isTouch()) attachTouch(this);
@@ -581,6 +588,7 @@ export class Match {
   // ---------------- asosiy tsikl ----------------
   update(dt) {
     if (this.paused) return;
+    this.lastDt = dt;
     const J = this.jerry, T = this.tom, P = this.player;
     hud.tick(dt);
     if (this.phase === 'intro') {
@@ -712,6 +720,7 @@ export class Match {
     if (this.me === 'tom') T.model.root.visible = !this.isFP();
     this.camera(dt);
     this.updateHud();
+    if (!this.net) this.placeTags(this.tagList ? this.tagList() : [this.opp]);
     if (this.scoreOn) { this.scoreT = (this.scoreT || 0) - dt; if (this.scoreT <= 0) { this.scoreT = .5; this.renderScore(); } }
     for (const a of this.world.anim) a(this.time + 100);
     updateGfx(dt, P.p, this.time + this.introT);
@@ -797,6 +806,26 @@ export class Match {
     if (this.bigOn) hud.drawBig(md, this.world.rooms);
   }
 
+  // ---------------- boshlar ustidagi nomlar ----------------
+  // jamoadoshlar — devor orqasidan ham; raqiblar — faqat ko'rinib tursa
+  placeTags(list) {
+    const box = $('teamTags'); if (box.classList.contains('hidden')) box.classList.remove('hidden');
+    this.tagT = (this.tagT || 0) - (this.lastDt || .016); const los = this.tagT <= 0; if (los) this.tagT = .15;
+    const cam = gfx.camera, P = this.player;
+    for (const e of list) {
+      if (!e || e === P) { if (e && e.tag) e.tag.style.display = 'none'; continue; }
+      if (!e.tag) { e.tag = document.createElement('div'); box.appendChild(e.tag); }
+      const mate = e.kind === this.me;
+      if (e.tagKey !== (e.nick || '') + mate) { e.tagKey = (e.nick || '') + mate; e.tag.className = 'ttag ' + (mate ? 'mate' : 'foe'); e.tag.textContent = e.nick || ''; }
+      let show = !e.out && !e.hidden && this.phase !== 'end' && !(!mate && (e.ghost || e.invis > 0)) && d2(e.p, P.p) < 55;
+      let v = null;
+      if (show) { v = new THREE.Vector3(e.p.x, e.p.y + e.h + .5, e.p.z).project(cam); if (v.z > 1 || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05) show = false; }
+      if (show && !mate) { if (los || e.tagLos === undefined) e.tagLos = !this.world.lineBlocked(cam.position.x, cam.position.y, cam.position.z, e.p.x, e.p.y + e.h * .8, e.p.z); show = e.tagLos; }
+      e.tag.style.display = show ? '' : 'none';
+      if (show) { e.tag.style.left = (v.x * .5 + .5) * window.innerWidth + 'px'; e.tag.style.top = (-v.y * .5 + .5) * window.innerHeight + 'px'; }
+    }
+  }
+
   // ---------------- o'yinchilar ro'yxati (TAB / 👤) ----------------
   toggleScore(on) {
     this.scoreOn = on === undefined ? !this.scoreOn : on;
@@ -806,7 +835,7 @@ export class Match {
   }
   scoreRows() {
     const a = this.app, mine = { nick: a.profile.nick, color: a.profile.color, me: true };
-    const opp = this.net ? { nick: (this.net.oppInfo || {}).nick || 'Raqib', color: (this.net.oppInfo || {}).color, title: (this.net.oppInfo || {}).title } : { nick: '🤖 Kompyuter' };
+    const opp = this.net ? { nick: (this.net.oppInfo || {}).nick || 'Raqib', color: (this.net.oppInfo || {}).color, title: (this.net.oppInfo || {}).title } : { nick: this.opp.nick };
     const J = this.me === 'jerry' ? mine : opp, T = this.me === 'tom' ? mine : opp;
     return { tom: [Object.assign({ st: `ushladi: ${this.catches}` }, T)], jerry: [Object.assign({ st: `❤ ${this.lives} · 🧀 ${this.cheeseN}` }, J)] };
   }
@@ -900,6 +929,7 @@ export class Match {
   dispose() {
     const c = gfx.renderer.domElement;
     hud.jerryMark(false); this.toggleScore(false);
+    $('teamTags').innerHTML = ''; $('teamTags').classList.add('hidden');
     if (this.voice && !(this.net && this.net.voice)) this.voice.close();
     this.voice = null;
     this.chatOpen = false; $('netBar').classList.add('hidden'); $('chatBar').classList.add('hidden'); $('chatBox').innerHTML = ''; $('oppVoice').classList.add('hidden');

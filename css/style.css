@@ -469,7 +469,7 @@ body.touch #hubBar { bottom: auto; top: 64px; } body.touch #hubChat { bottom: au
 .sb-foot { text-align: center; font-size: 11px; opacity: .6; margin-top: 6px; } body.touch .sb-foot { display: none; }
 #tList { right: 290px; top: 12px; } #tView { right: 350px; top: 12px; }
 @media (max-height: 520px) { #tList { right: 210px; } #tView { right: 270px; } }
-#teamTags .ttag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 12px; padding: 0 7px; border-radius: 8px; white-space: nowrap; pointer-events: none; }
+#teamTags .ttag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 14px; padding: 1px 8px; border: 1.5px solid rgba(255,255,255,.6); border-radius: 8px; white-space: nowrap; pointer-events: none; }
 #teamTags .ttag.mate { background: rgba(30,90,40,.7); } #teamTags .ttag.foe { background: rgba(140,20,20,.7); }
 #oppTag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 15px; background: rgba(15,8,25,.65); padding: 1px 10px; border-radius: 10px; white-space: nowrap; pointer-events: none; }
 

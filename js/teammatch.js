@@ -8,6 +8,7 @@ import * as SND from './audio.js';
 import { hud } from './hud.js';
 import { TomAI, JerryAI } from './ai.js';
 import { SETS } from './catalog.js';
+import { botName } from './match.js';
 import { DIM } from './models.js';
 import { gfx } from './gfx.js';
 
@@ -27,13 +28,13 @@ export class TeamMatch extends Match {
     this.player.nick = app.profile.nick; this.player.isMe = true;
     this.jerries = [this.jerry]; this.toms = [this.tom];
     const skins = SETS.map(s => s.id), rnd = a => a[Math.floor(Math.random() * a.length)];
-    const names = { jerry: BOT_NAMES.jerry.slice().sort(() => Math.random() - .5), tom: BOT_NAMES.tom.slice().sort(() => Math.random() - .5) };
-    this.opp.nick = '🤖 ' + names[this.opp.kind].pop();
+    const used = new Set([this.opp.nick]);
+    const uniq = kind => { for (let k = 0; k < 20; k++) { const n = botName(kind); if (!used.has(n)) { used.add(n); return n; } } return botName(kind) + used.size; };
     for (const kind of ['jerry', 'tom']) {
       const list = kind === 'jerry' ? this.jerries : this.toms;
       while (list.length < team[kind]) {
         const e = this.ent(kind, Math.random() < .5 ? 'classic' : rnd(skins));
-        e.nick = '🤖 ' + (names[kind].pop() || kind + list.length);
+        e.nick = uniq(kind);
         list.push(e);
       }
     }
@@ -50,8 +51,7 @@ export class TeamMatch extends Match {
       e.bot = bot; this.bots.push(bot);
     }
     this.teamSpawn();
-    this.tags = document.getElementById('teamTags'); this.tags.innerHTML = ''; this.tags.classList.remove('hidden');
-    for (const e of [...this.jerries, ...this.toms]) if (e !== this.player) { e.tag = document.createElement('div'); e.tag.className = 'ttag ' + (e.kind === this.me ? 'mate' : 'foe'); e.tag.textContent = e.nick; this.tags.appendChild(e.tag); }
+    this.tags = document.getElementById('teamTags'); this.tags.innerHTML = '';
     hud.say(this.me === 'jerry' ? `Siz 6 Jerrydan birisiz! 4 Tomdan qoching 🐭` : `Siz 4 Tomdan birisiz! 6 Jerryni ushlang 🐱`, 'gold', 4);
   }
   // AI uchun ko'rinish: Tom boti uchun "jerry" — uning nishoni, Jerry boti uchun "tom" — eng yaqin xavf
@@ -209,8 +209,8 @@ export class TeamMatch extends Match {
       e.model.setOpacity(e.invis > 0 ? (e.kind === this.me ? .4 : .12) : e.invul > 0 ? (Math.sin(this.time * 30) > 0 ? 1 : .35) : 1);
       if (e.birds) { e.birds.visible = a === 'dazed'; if (e.birds.visible) PR.updateBirds(e.birds, this.time); }
     }
-    this.placeTags();
   }
+  tagList() { return [...this.jerries, ...this.toms]; }
   runBot(b, dt, playing) {
     const e = b.e;
     b.thinkT -= dt; b.seeT -= dt;
@@ -247,19 +247,6 @@ export class TeamMatch extends Match {
       else if (!e.hidden) this.drive(e, null, 0, dt, 0);
       // sir yeydi
       if (!e.hidden) for (const it of this.cheese.items) if (it.on && Math.abs(it.p.x - e.p.x) < 1.15 && Math.abs(it.p.z - e.p.z) < 1.15 && Math.abs(it.p.y + .55 - (e.p.y + .6)) < 1.3) this.cheese.take(it);
-    }
-  }
-  // boshlar ustidagi niklar: jamoadoshlar doim, raqiblar — ko'rinib tursa
-  placeTags() {
-    const cam = gfx.camera;
-    for (const e of [...this.jerries, ...this.toms]) {
-      if (!e.tag) continue;
-      const mate = e.kind === this.me;
-      const show = !e.out && !e.hidden && this.phase !== 'end' && (mate || (this.me === 'tom' ? (this.seenJ || []).includes(e) : this.sight(e, this.player)));
-      if (!show) { e.tag.style.display = 'none'; continue; }
-      const v = new THREE.Vector3(e.p.x, e.p.y + e.h + .5, e.p.z).project(cam);
-      if (v.z > 1 || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05 || d2(e.p, this.player.p) > 50) { e.tag.style.display = 'none'; continue; }
-      e.tag.style.display = ''; e.tag.style.left = (v.x * .5 + .5) * window.innerWidth + 'px'; e.tag.style.top = (-v.y * .5 + .5) * window.innerHeight + 'px';
     }
   }
   // xaritadagi boshlar: jamoadoshlar nik bilan doim, raqiblar — ko'rilganda
