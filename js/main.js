@@ -37,6 +37,7 @@ function defaultData() {
 }
 // tozalangan akkaunt: hammasi nol
 function zeroData() { const d = defaultData(); d.wallet = { sir: 0, gold: 0, diamond: 0 }; d.inv = {}; return d; }
+app.zeroData = zeroData;
 function mergeData(d) {
   const def = defaultData();
   if (!d) return def;

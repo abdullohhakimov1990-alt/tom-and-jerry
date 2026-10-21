@@ -25,6 +25,7 @@ service cloud.firestore {
         && (request.resource.data.get('icon', '') != 'owner' || isSuper())
         && (request.resource.data.get('role', '') == '' || isSuper())
         && (!(request.resource.data.get('color', 'white') in ['sunset', 'goldshine', 'toxic', 'bloodnight', 'pearl', 'fire', 'ice', 'neon', 'rainbow', 'galaxy', 'royal']) || isAdmin());
+      allow update: if isSuper() && request.resource.data.pid == resource.data.pid && request.resource.data.nick == resource.data.nick;
       allow update: if signedIn() && me() == uid
         && request.resource.data.pid == resource.data.pid
         && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15
@@ -42,7 +43,10 @@ service cloud.firestore {
 
     // Shaxsiy ma'lumotlar: valyuta, skinlar, buyumlar — faqat egasi
     match /users/{uid} {
-      allow read, write: if signedIn() && me() == uid;
+      allow read: if signedIn() && (me() == uid || isSuper());
+      // epoch — umumiy tozalash raqami (js/catalog.js RESET.epoch). Eski versiya eski boylikni qayta yoza olmaydi.
+      allow create, update: if signedIn() && ((me() == uid && request.resource.data.data.get('epoch', 0) >= 2) || isSuper());
+      allow delete: if signedIn() && me() == uid;
 
       // Do'stlar ro'yxati
       match /friends/{fid} {

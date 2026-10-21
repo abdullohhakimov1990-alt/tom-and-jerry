@@ -28,6 +28,8 @@ ui.init = function (a) {
   $('btnRules').onclick = () => ui.open('rules');
   $('btnAdmin').onclick = () => ui.openAdmin();
   $('btnApGift').onclick = ui.adminGift;
+  $('btnApWipe').onclick = ui.adminWipe; $('btnApWipeAll').onclick = ui.adminWipeAll;
+  $('apWipePid').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
   document.querySelectorAll('[data-note]').forEach(b => b.onclick = () => { $('frNote').value = b.dataset.note; SND.play('click'); });
   $('btnCardAdd').onclick = addCard;
   $('btnApAdd').onclick = () => ui.adminSet($('apAdminPid').value, true);
@@ -429,6 +431,32 @@ ui.adminSet = async function (pid, on) {
   if (pid === app.profile.pid) { m.textContent = "Siz allaqachon Super Adminsiz"; m.className = 'msg bad'; return; }
   try { await app.backend.setAdmin(pid, on); m.textContent = on ? `ID ${pid} endi ADMIN ⭐` : `ID ${pid} adminlikdan olindi`; m.className = 'msg ok'; $('apAdminPid').value = ''; SND.play('buy'); }
   catch (e) { m.textContent = e.message; m.className = 'msg bad'; SND.play('error'); }
+};
+// Super Admin: akkauntni darhol nolga tushirish
+ui.adminWipe = async function () {
+  const m = $('apWipeMsg'), pid = $('apWipePid').value.trim();
+  if (!app.isSuper) return;
+  if (!/^\d{8}$/.test(pid)) { m.textContent = 'ID 8 ta raqamdan iborat'; m.className = 'msg bad'; return; }
+  if (!(await ui.confirm(`ID <b>${esc(pid)}</b> akkauntini butunlay nolga tushirasizmi?<br>Oltin, olmos, skinlar, buyumlar o'chadi.`))) return;
+  $('btnApWipe').disabled = true;
+  try {
+    const r = await app.backend.wipeAccount(pid, app.zeroData());
+    const b = r.before;
+    m.textContent = `✅ ID ${pid} nolga tushirildi` + (b ? ` (avval: ${fmt(b.gold)} oltin, ${fmt(b.diamond)} olmos, ${fmt(b.sir)} sir edi)` : ''); m.className = 'msg ok'; SND.play('poof');
+    $('apWipePid').value = '';
+  } catch (e) { m.textContent = e.message; m.className = 'msg bad'; SND.play('error'); }
+  $('btnApWipe').disabled = false;
+};
+ui.adminWipeAll = async function () {
+  const m = $('apWipeMsg');
+  if (!app.isSuper) return;
+  if (!(await ui.confirm(`<b>⚠️ HAMMA</b> o'yinchilarning akkauntini nolga tushirasizmi?<br>Sizning akkauntingiz tegilmaydi. Buni qaytarib bo'lmaydi.`))) return;
+  $('btnApWipeAll').disabled = true; m.textContent = 'Bajarilmoqda...'; m.className = 'msg';
+  try {
+    const n = await app.backend.wipeAll(app.zeroData(), (k, t) => { m.textContent = `Bajarilmoqda... ${k}/${t}`; });
+    m.textContent = `✅ ${n} ta akkaunt nolga tushirildi`; m.className = 'msg ok'; SND.play('poof');
+  } catch (e) { m.textContent = e.message; m.className = 'msg bad'; SND.play('error'); }
+  $('btnApWipeAll').disabled = false;
 };
 ui.adminGift = async function () {
   const m = $('apGiftMsg'), pid = $('apGiftPid').value.trim(), n = Math.floor(+$('apGiftN').value), cur = $('apGiftCur').value;

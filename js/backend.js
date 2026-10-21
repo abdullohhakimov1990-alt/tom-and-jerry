@@ -110,6 +110,8 @@ function localBackend() {
   B.getRole = async () => new URLSearchParams(location.search).has('superadmin') ? 'super' : (db().admins[me.uid] ? 'admin' : 'player');
   B.uidByPid = async pid => { const uid = db().pids[String(pid).trim()]; if (!uid) throw new Error('Bunday ID topilmadi'); return uid; };
   B.setAdmin = async (pid, on) => { const uid = await B.uidByPid(pid); const d = db(); if (on) d.admins[uid] = { pid, nick: (d.profiles[uid] || {}).nick, by: me.uid, created: Date.now() }; else delete d.admins[uid]; write(d); return uid; };
+  B.wipeAccount = async (pid, zero) => { const uid = await B.uidByPid(pid); if (uid === me.uid) throw new Error("O'zingizni nolga tushira olmaysiz"); const d = db(), o = d.users[uid]; const before = o ? { gold: o.wallet.gold, diamond: o.wallet.diamond, sir: o.wallet.sir } : null; d.users[uid] = zero; if (d.profiles[uid]) Object.assign(d.profiles[uid], { icon: zero.equip.icon, color: zero.equip.color }); write(d); return { uid, before }; };
+  B.wipeAll = async zero => { const d = db(); let n = 0; for (const uid of Object.keys(d.profiles)) { if (uid === me.uid) continue; d.users[uid] = JSON.parse(JSON.stringify(zero)); Object.assign(d.profiles[uid], { icon: zero.equip.icon, color: zero.equip.color }); n++; } write(d); return n; };
   B.watchAdmins = cb => { const f = () => { const d = db(); cb(Object.entries(d.admins).map(([uid, a]) => Object.assign({ uid }, a))); }; subs.add(f); f(); return () => subs.delete(f); };
   B.slot = SLOT;
   B.makeNet = async () => localNet(me.uid);
@@ -122,7 +124,7 @@ async function firebaseBackend(cfg) {
   const [{ initializeApp }, AU, FS] = await Promise.all([import(U('app')), import(U('auth')), import(U('firestore'))]);
   const app = initializeApp(cfg);
   const auth = AU.getAuth(app), db = FS.getFirestore(app);
-  const { doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, onSnapshot, serverTimestamp, runTransaction, writeBatch } = FS;
+  const { doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, onSnapshot, serverTimestamp, runTransaction, writeBatch } = FS;
   let me = null;
   const ms = t => t && t.toMillis ? t.toMillis() : (t || 0);
   const B = {
@@ -210,6 +212,28 @@ async function firebaseBackend(cfg) {
     if (on) { const p = await getDoc(doc(db, 'profiles', uid)); await setDoc(doc(db, 'admins', uid), { pid: String(pid), nick: p.exists() ? p.data().nick : '', by: me.uid, created: serverTimestamp() }); }
     else await deleteDoc(doc(db, 'admins', uid));
     return uid;
+  };
+  // ---- Super Admin: akkauntni darhol nolga tushirish (o'yinchi kirishini kutmasdan) ----
+  const sumOf = d => d ? { gold: (d.wallet || {}).gold || 0, diamond: (d.wallet || {}).diamond || 0, sir: (d.wallet || {}).sir || 0 } : null;
+  B.wipeAccount = async (pid, zero) => {
+    const uid = await B.uidByPid(pid);
+    if (uid === me.uid) throw new Error("O'zingizni nolga tushira olmaysiz");
+    const u = await getDoc(doc(db, 'users', uid)), before = sumOf(u.exists() ? u.data().data : null);
+    await setDoc(doc(db, 'users', uid), { data: zero, updated: serverTimestamp() });
+    await updateDoc(doc(db, 'profiles', uid), { icon: zero.equip.icon, color: zero.equip.color });
+    return { uid, before };
+  };
+  B.wipeAll = async (zero, onProgress) => {
+    const ps = await getDocs(collection(db, 'profiles')), list = ps.docs.filter(d => d.id !== me.uid);
+    for (let i = 0; i < list.length; i += 200) {
+      const b = writeBatch(db);
+      for (const d of list.slice(i, i + 200)) {
+        b.set(doc(db, 'users', d.id), { data: zero, updated: serverTimestamp() });
+        b.update(doc(db, 'profiles', d.id), { icon: zero.equip.icon, color: zero.equip.color });
+      }
+      await b.commit(); onProgress && onProgress(Math.min(list.length, i + 200), list.length);
+    }
+    return list.length;
   };
   B.watchAdmins = cb => onSnapshot(collection(db, 'admins'), snap => cb(snap.docs.map(d => Object.assign({ uid: d.id }, d.data()))), e => console.error('Adminlar:', fbErr(e)));
   // onlayn o'yin (Realtime Database)
