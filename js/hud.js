@@ -107,6 +107,13 @@ H.drawMap = function (d) {
   };
   const clampR = ([x, y]) => { const dx = x - W / 2, dy = y - Hh / 2, L = Math.hypot(dx, dy), R = W / 2 - 14; return L > R ? [W / 2 + dx / L * R, Hh / 2 + dy / L * R] : [x, y]; };
   if (d.showT) { const [x, y] = clampR(toScreen(d.tp)); tomHead(g, x, y, d.me === 'tom' ? 10 : 11, d.tFaded ? .55 : 1); }
+  // jamoaviy rejim: jamoadoshlar (nik bilan) va ko'ringan raqiblar
+  if (d.team) for (const t of d.team) {
+    const [x, y] = clampR(toScreen(t)), r = t.me ? 9 : 7.5;
+    (t.kind === 'tom' ? tomHead : jerryHead)(g, x, y, r, t.faded ? .5 : 1);
+    if (t.me) { g.strokeStyle = '#ffd23f'; g.lineWidth = 2.5; g.beginPath(); g.arc(x, y, r + 3, 0, 7); g.stroke(); }
+    else if (t.nick) { g.font = 'bold 10px sans-serif'; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(t.nick, x, y + r + 11); g.fillStyle = t.mate ? '#ffffff' : '#ff8a80'; g.fillText(t.nick, x, y + r + 11); }
+  }
   if (d.showJ) { const [x, y] = clampR(toScreen(d.jp)); jerryHead(g, x, y, d.me === 'jerry' ? 9 : 9, d.jFaded ? .5 : 1); if (d.jUnknown) { g.fillStyle = '#ffd400'; g.font = 'bold 16px sans-serif'; g.fillText('?', x + 8, y - 8); } }
   // yo'nalish o'qi va shimol
   g.fillStyle = '#fff'; g.beginPath(); g.moveTo(W / 2, Hh / 2 - 22); g.lineTo(W / 2 - 6, Hh / 2 - 12); g.lineTo(W / 2 + 6, Hh / 2 - 12); g.closePath(); g.fill();
@@ -126,6 +133,10 @@ H.drawBig = function (d, rooms) {
   for (const h of d.hides) { g.fillStyle = d.hiddenSpot === h ? '#ff4081' : d.guide === h ? '#7dff9e' : 'rgba(80,230,120,.9)'; g.fillRect(h.x * PPU - 4, h.z * PPU - 4, 8, 8); }
   if (d.showT) tomHead(g, d.tp.x * PPU, d.tp.z * PPU, 16, d.tFaded ? .55 : 1);
   if (d.showJ) jerryHead(g, d.jp.x * PPU, d.jp.z * PPU, 13, d.jFaded ? .5 : 1);
+  if (d.team) for (const t of d.team) {
+    (t.kind === 'tom' ? tomHead : jerryHead)(g, t.x * PPU, t.z * PPU, t.kind === 'tom' ? 14 : 12, t.faded ? .5 : 1);
+    if (t.nick || t.me) { g.font = 'bold 15px sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,.85)'; const s = t.me ? 'SIZ' : t.nick; g.strokeText(s, t.x * PPU, t.z * PPU + 30); g.fillStyle = t.me ? '#ffd23f' : t.mate ? '#fff' : '#ff8a80'; g.fillText(s, t.x * PPU, t.z * PPU + 30); }
+  }
   g.restore();
 };
 // qobiliyat tugmasi (E): qayta tiklanish soati

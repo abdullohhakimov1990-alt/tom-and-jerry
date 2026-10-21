@@ -459,6 +459,8 @@ body.touch .keys { display: none; }
 #hubTags .htag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 14px; background: rgba(15,8,25,.6); padding: 1px 9px; border-radius: 10px; white-space: nowrap; }
 .htag .spk { animation: jbob .5s ease-in-out infinite; display: inline-block; margin-right: 3px; } .htag .mic { margin-right: 3px; font-size: 11px; }
 body.touch #hubBar { bottom: auto; top: 64px; } body.touch #hubChat { bottom: auto; top: 64px; left: 8px; width: 40vw; }
+#teamTags .ttag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 12px; padding: 0 7px; border-radius: 8px; white-space: nowrap; pointer-events: none; }
+#teamTags .ttag.mate { background: rgba(30,90,40,.7); } #teamTags .ttag.foe { background: rgba(140,20,20,.7); }
 #oppTag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 15px; background: rgba(15,8,25,.65); padding: 1px 10px; border-radius: 10px; white-space: nowrap; pointer-events: none; }
 
 /* suriladigan panellar (telefonda barmoq bilan) */
@@ -504,3 +506,12 @@ body.touch #hubBar { bottom: auto; top: 64px; } body.touch #hubChat { bottom: au
 .ap-row input, .ap-row select { flex: 1; min-width: 90px; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 2px solid rgba(255,255,255,.35); background: rgba(0,0,0,.35); color: #fff; font-family: inherit; font-weight: 700; }
 .ap-row select option { background: #2a1840; }
 #apAdmins { max-height: 220px; }
+
+/* telefon (yotiq ekran): chat va mikrofon — chap pastda kichik qatorda, Do'stlar tugmasini yopmaydi */
+@media (max-height: 520px) {
+  #menuSocial { left: 10px; bottom: 10px; flex-direction: row; gap: 8px; }
+  #menuSocial .soc { width: 56px; height: 44px; font-size: 19px; border-radius: 12px; border-width: 2px; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+  #menuSocial .soc small { font-size: 9px; margin-top: 0; }
+  #menuChat { left: 10px; bottom: 62px; width: min(320px, 46vw); padding: 8px; gap: 4px; }
+  #mChatList { max-height: 96px; } #mChatList .cm { font-size: 12px; } #mChatQuick .chip { font-size: 11px; padding: 2px 7px; }
+}

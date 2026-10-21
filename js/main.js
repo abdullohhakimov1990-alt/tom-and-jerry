@@ -9,6 +9,7 @@ import { makeStage } from './stage.js';
 import { ui } from './ui.js';
 import { Match } from './match.js';
 import { Hub } from './hub.js';
+import { TeamMatch } from './teammatch.js';
 import { initOnline } from './online.js';
 import { START_WALLET, CHAR_PRICE, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS, GIFT_MAX, RESET, SUPER_ADMINS } from './catalog.js';
 import * as SND from './audio.js';
@@ -214,7 +215,8 @@ app.startMatch = (opts = {}) => {
   ui.close('shop'); ui.close('friends'); ui.close('result');
   $('menu').classList.add('hidden');
   app.stage.show(false);
-  app.match = new Match(app, opts.role || app.data.char, opts.net);
+  const mp = MAPS[MAP];
+  app.match = mp.team && !opts.net ? new TeamMatch(app, opts.role || app.data.char, mp.team) : new Match(app, opts.role || app.data.char, opts.net);
   app.match.lock();
 };
 // ---------------- XARITA almashtirish (uy qaytadan quriladi) ----------------
