@@ -21,7 +21,9 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && me() == uid
         && request.resource.data.nick is string
-        && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15;
+        && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15
+        && (request.resource.data.get('icon', '') != 'owner' || isSuper())
+        && (!(request.resource.data.get('color', 'white') in ['sunset', 'goldshine', 'toxic', 'bloodnight', 'pearl', 'fire', 'ice', 'neon', 'rainbow', 'galaxy', 'royal']) || isAdmin());
       allow update: if signedIn() && me() == uid
         && request.resource.data.pid == resource.data.pid
         && request.resource.data.nick.size() >= 3 && request.resource.data.nick.size() <= 15
