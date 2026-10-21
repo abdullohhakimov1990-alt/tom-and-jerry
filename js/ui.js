@@ -28,6 +28,7 @@ ui.init = function (a) {
   $('btnRules').onclick = () => ui.open('rules');
   $('btnAdmin').onclick = () => ui.openAdmin();
   $('btnApGift').onclick = ui.adminGift;
+  $('btnHub').onclick = () => { SND.play('click'); app.enterHub(); };
   $('btnApWipe').onclick = ui.adminWipe; $('btnApWipeAll').onclick = ui.adminWipeAll;
   $('apWipePid').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
   document.querySelectorAll('[data-note]').forEach(b => b.onclick = () => { $('frNote').value = b.dataset.note; SND.play('click'); });

@@ -27,6 +27,19 @@ export async function firebaseNet(app, cfg, uid) {
     sendEvent(id, ev) { D.push(R(`rooms/${id}/ev`), Object.assign({ by: uid, t: Date.now() + offset }, ev)).catch(() => { }); },
     watchEvents(id, cb) { return D.onChildAdded(R(`rooms/${id}/ev`), s => { const v = s.val(); if (v && v.by !== uid) cb(v); }); },
     armDisconnect(id) { D.onDisconnect(R(`rooms/${id}/p/${uid}`)).remove(); D.onDisconnect(R(`rooms/${id}/left/${uid}`)).set(true); },
+    // ---- HUB: hamma onlayn o'yinchilar birga turadigan joy ----
+    async hubJoin(info) {
+      await D.remove(R('hub/sig/' + uid)).catch(() => { });
+      D.onDisconnect(R('hub/players/' + uid)).remove();
+      await D.set(R('hub/players/' + uid), Object.assign({ t: D.serverTimestamp() }, info));
+    },
+    hubState(st) { D.update(R('hub/players/' + uid), Object.assign({ t: Date.now() + offset }, st)).catch(() => { }); },
+    watchHub(cb) { return D.onValue(R('hub/players'), s => cb(s.val() || {})); },
+    async hubLeave() { try { await D.onDisconnect(R('hub/players/' + uid)).cancel(); await D.remove(R('hub/players/' + uid)); await D.remove(R('hub/sig/' + uid)); } catch (e) { } },
+    hubChat(m) { return D.push(R('hub/chat'), Object.assign({ by: uid, t: Date.now() + offset }, m)); },
+    watchHubChat(cb) { return D.onChildAdded(D.query(R('hub/chat'), D.limitToLast(15)), s => cb(s.val())); },
+    hubSig(to, o) { D.push(R('hub/sig/' + to), Object.assign({ from: uid }, o)).catch(() => { }); },
+    watchHubSig(cb) { return D.onChildAdded(R('hub/sig/' + uid), s => { const v = s.val(); D.remove(s.ref).catch(() => { }); if (v) cb(v); }); },
     async leave(id) { try { await D.onDisconnect(R(`rooms/${id}/p/${uid}`)).cancel(); await D.onDisconnect(R(`rooms/${id}/left/${uid}`)).cancel(); await D.set(R(`rooms/${id}/left/${uid}`), true); await D.remove(R(`rooms/${id}/p/${uid}`)); } catch (e) { } },
   };
   return N;
@@ -58,6 +71,18 @@ export function localNet(uid) {
     sendEvent(id, ev) { ch.postMessage({ k: 'ev', id, ev: Object.assign({ by: uid, t: Date.now() }, ev) }); },
     watchEvents(id, cb) { const f = m => { if (m.k === 'ev' && m.id === id && m.ev.by !== uid) cb(m.ev); }; msg.add(f); return () => msg.delete(f); },
     armDisconnect(id) { N._unload = () => { ch.postMessage({ k: 'gone', id, uid }); }; window.addEventListener('beforeunload', N._unload); },
+    // ---- HUB (sinov: bitta brauzer ichida) ----
+    async hubJoin(info) { N._hub = Object.assign({}, info); N._hubT = setInterval(() => ch.postMessage({ k: 'hub', uid, st: Object.assign({ t: Date.now() }, N._hub) }), 1000); N._hubUn = () => ch.postMessage({ k: 'hubgone', uid }); window.addEventListener('beforeunload', N._hubUn); },
+    hubState(st) { Object.assign(N._hub || {}, st); ch.postMessage({ k: 'hub', uid, st: Object.assign({ t: Date.now() }, N._hub) }); },
+    watchHub(cb) {
+      const all = {}; const f = m => { if (m.k === 'hub' && m.uid !== uid) { all[m.uid] = m.st; cb(Object.assign({}, all)); } if (m.k === 'hubgone') { delete all[m.uid]; cb(Object.assign({}, all)); } };
+      msg.add(f); return () => msg.delete(f);
+    },
+    async hubLeave() { clearInterval(N._hubT); if (N._hubUn) window.removeEventListener('beforeunload', N._hubUn); ch.postMessage({ k: 'hubgone', uid }); },
+    hubChat(m) { const v = Object.assign({ by: uid, t: Date.now() }, m); ch.postMessage({ k: 'hubchat', v }); msg.forEach(f => f({ k: 'hubchat', v })); },
+    watchHubChat(cb) { const f = m => { if (m.k === 'hubchat') cb(m.v); }; msg.add(f); return () => msg.delete(f); },
+    hubSig(to, o) { ch.postMessage({ k: 'hubsig', to, v: Object.assign({ from: uid }, o) }); },
+    watchHubSig(cb) { const f = m => { if (m.k === 'hubsig' && m.to === uid) cb(m.v); }; msg.add(f); return () => msg.delete(f); },
     async leave(id) { if (N._unload) window.removeEventListener('beforeunload', N._unload); ch.postMessage({ k: 'gone', id, uid }); await N.updateRoom(id, { ['left/' + uid]: true }); },
   };
   return N;

@@ -339,7 +339,7 @@ kbd { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 6px
 #rotate small { color: var(--muted); font-size: 15px; }
 @keyframes rot { 0%,30% { transform: rotate(0); } 60%,100% { transform: rotate(-90deg); } }
 @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
-#touch { position: absolute; inset: 0; pointer-events: none; }
+#touch { position: fixed; inset: 0; z-index: 19; pointer-events: none; }
 #touch > * { pointer-events: auto; touch-action: none; }
 #lookPad { position: absolute; left: 40%; right: 0; top: 0; bottom: 0; }
 #joy { position: absolute; left: 4vw; bottom: 6vh; width: 150px; height: 150px; border-radius: 50%; background: rgba(255,255,255,.12); border: 3px solid rgba(255,255,255,.5); }
@@ -411,6 +411,27 @@ body.touch .stam { width: 180px; }
 #chatQuick { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
 .chat-in { display: flex; gap: 6px; } .chat-in input { flex: 1; font-size: 16px; padding: 9px 12px; border-radius: 12px; border: 2px solid var(--gold); background: rgba(0,0,0,.75); color: #fff; outline: none; font-family: inherit; font-weight: 700; }
 body.touch #chatBar { bottom: auto; top: 112px; }
+/* tugmalar ro'yxati (kompyuterda) */
+.keys { position: absolute; right: 12px; bottom: 12px; display: grid; grid-template-columns: auto auto; gap: 3px 8px; align-items: center; font-size: 12px; font-weight: 700; background: rgba(15,8,25,.55); border-radius: 12px; padding: 8px 10px; pointer-events: none; opacity: .85; }
+.keys b { justify-self: end; background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.55); border-radius: 6px; padding: 0 6px; font-size: 11px; }
+#gameKeys { bottom: 96px; }
+body.touch .keys { display: none; }
+/* HUB */
+#hubHud { position: fixed; inset: 0; z-index: 20; pointer-events: none; text-shadow: 0 2px 3px rgba(0,0,0,.7); }
+#hubTop { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: rgba(15,8,25,.65); border: 2px solid rgba(255,255,255,.35); border-radius: 16px; padding: 5px 8px 5px 14px; pointer-events: auto; }
+#hubTop .ht { font-weight: 900; color: var(--gold); font-size: 17px; } #hubCount { font-size: 13px; font-weight: 800; opacity: .9; margin-right: 4px; }
+#hubTop > button:not(.btn) { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,.85); background: rgba(20,12,30,.65); font-size: 19px; cursor: pointer; position: relative; }
+#hubMicBtn { filter: grayscale(1); opacity: .75; } #hubMicBtn::after { content: ''; position: absolute; left: 50%; top: 7px; bottom: 7px; width: 3px; background: #ff4d4d; transform: rotate(45deg); border-radius: 2px; }
+#hubMicBtn.on { filter: none; opacity: 1; background: rgba(40,170,80,.75); box-shadow: 0 0 12px rgba(80,255,130,.8); } #hubMicBtn.on::after { display: none; }
+#hubChat { position: absolute; left: 12px; bottom: 16px; width: min(380px, 46vw); display: flex; flex-direction: column; gap: 4px; }
+#hubChat .cm { background: rgba(15,8,25,.7); border-radius: 10px; padding: 4px 10px; font-size: 14px; font-weight: 700; word-break: break-word; }
+#hubChat .cm.me { background: rgba(40,90,40,.7); } #hubChat .cm.sys { background: rgba(60,40,0,.7); color: #ffe08a; font-size: 12px; }
+#hubBar { position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%); width: min(560px, 92vw); pointer-events: auto; display: flex; flex-direction: column; gap: 6px; }
+#hubQuick { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+#hubHint { position: absolute; left: 50%; top: 60%; transform: translateX(-50%); background: rgba(15,8,25,.7); padding: 8px 16px; border-radius: 12px; font-weight: 800; white-space: nowrap; }
+#hubTags .htag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 14px; background: rgba(15,8,25,.6); padding: 1px 9px; border-radius: 10px; white-space: nowrap; }
+.htag .spk { animation: jbob .5s ease-in-out infinite; display: inline-block; margin-right: 3px; } .htag .mic { margin-right: 3px; font-size: 11px; }
+body.touch #hubBar { bottom: auto; top: 64px; } body.touch #hubChat { bottom: auto; top: 64px; left: 8px; width: 40vw; }
 #oppTag { position: absolute; transform: translate(-50%, -100%); font-weight: 800; font-size: 15px; background: rgba(15,8,25,.65); padding: 1px 10px; border-radius: 10px; white-space: nowrap; pointer-events: none; }
 
 /* suriladigan panellar (telefonda barmoq bilan) */

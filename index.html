@@ -71,6 +71,7 @@
   <div class="menu-logo"><div class="logo-top sm">TOM <span>&amp;</span> JERRY</div><div class="logo-sub sm">KATTA UY</div></div>
   <div id="charCards"></div>
   <div class="menu-right">
+    <button id="btnHub" class="btn green">🏠 Hub</button>
     <button id="btnShop" class="btn purple">🛒 Do'kon</button>
     <button id="btnRules" class="btn blue">📖 Qoidalar</button>
     <button id="btnAdmin" class="btn gold hidden">👑 Admin panel</button>
@@ -167,22 +168,13 @@
   <div class="hud-bottom"><div id="hPrompt"></div><div id="hStam" class="stam"><i></i></div><div class="hb-row"><div id="hotbar"></div><div id="abil" title="E"><span class="ai">💣</span><span class="key">E</span><span class="an"></span><b class="cdn"></b></div></div></div>
   <div id="jMark" class="hidden"><canvas width="64" height="64"></canvas><span>Jerry</span></div>
   <!-- telefon boshqaruvi -->
-  <div id="touch" class="hidden">
-    <div id="lookPad"></div>
-    <div id="joy"><div id="joyKnob"></div></div>
-    <button id="tJump" class="tbtn big" aria-label="Sakrash">⤒<small>Sakrash</small></button>
-    <button id="tHide" class="tbtn" aria-label="Yashirinish">👁<small>Yashirin</small></button>
-    <button id="tAct" class="tbtn hidden" aria-label="Tashlanish">🐾<small>Tashlan</small></button>
-    <button id="tSprint" class="tbtn small" aria-label="Yugurish">🏃</button>
-    <button id="tMap" class="tbtn small" aria-label="Xarita">🗺</button>
-    <button id="tPause" class="tbtn small" aria-label="Pauza">II</button>
-  </div>
   <div id="oppTag" class="hidden"></div>
   <div id="netBar" class="hidden"><button id="btnChat" title="Chat (Enter)">💬</button><button id="btnMic" title="Mikrofon (T)">🎤</button><span id="oppVoice" class="hidden">🔊</span></div>
   <div id="chatBox"></div>
   <div id="chatBar" class="hidden"><div id="chatQuick"></div><div class="chat-in"><input id="chatInput" maxlength="80" autocomplete="off" placeholder="Xabar yozing... (Enter — yuborish, Esc — yopish)"><button id="btnChatSend" class="btn orange">➤</button></div></div>
   <div id="crosshair" class="hidden"></div>
-  <div id="lockHint" class="hidden">Boshqarish uchun ekranni bosing 🖱️</div>
+  <div id="lockHint" class="hidden">Ekranni bosing yoki sichqonchani bosib sudrang — atrofga qarash 🖱️</div>
+  <div id="gameKeys" class="keys"><b>W A S D</b> yurish<b>Shift</b> yugurish<b>Space</b> sakrash<b>C</b> yashirinish<b>E</b> qobiliyat<b>1-7</b> buyumlar<b>V</b> ko'rinish<b>M</b> xarita<b>Enter</b> chat<b>T</b> mikrofon</div>
 </div>
 <div id="countdown" class="hidden"></div>
 <div id="rotate"><div class="rot-ic">📱</div><div>Telefonni <b>yotqizing</b> (gorizontal)</div><small>O'yin faqat yotiq ekranda ishlaydi</small></div>
@@ -256,6 +248,26 @@
     <div id="apAdmins" class="flist"></div>
   </div>
 </div></div>
+<!-- telefon boshqaruvi (o'yinda va hubda) -->
+<div id="touch" class="hidden">
+    <div id="lookPad"></div>
+    <div id="joy"><div id="joyKnob"></div></div>
+    <button id="tJump" class="tbtn big" aria-label="Sakrash">⤒<small>Sakrash</small></button>
+    <button id="tHide" class="tbtn" aria-label="Yashirinish">👁<small>Yashirin</small></button>
+    <button id="tAct" class="tbtn hidden" aria-label="Tashlanish">🐾<small>Tashlan</small></button>
+    <button id="tSprint" class="tbtn small" aria-label="Yugurish">🏃</button>
+    <button id="tMap" class="tbtn small" aria-label="Xarita">🗺</button>
+    <button id="tPause" class="tbtn small" aria-label="Pauza">II</button>
+  </div>
+<!-- ============ HUB ============ -->
+<div id="hubHud" class="hidden">
+  <div id="hubTags"></div>
+  <div id="hubTop"><span class="ht">🏠 HUB</span><span id="hubCount">1 o'yinchi</span><button id="hubChatBtn" title="Chat (Enter)">💬</button><button id="hubMicBtn" title="Mikrofon (T)">🎤</button><button id="hubExit" class="btn red small">✕ Chiqish</button></div>
+  <div id="hubChat"></div>
+  <div id="hubBar" class="hidden"><div id="hubQuick"></div><div class="chat-in"><input id="hubInput" maxlength="80" autocomplete="off" placeholder="Hammaga yozing... (Enter — yuborish, Esc — yopish)"><button id="hubSend" class="btn orange">➤</button></div></div>
+  <div id="hubHint" class="hidden">Ekranni bosing yoki sichqonchani bosib sudrang — atrofga qarash 🖱️</div>
+  <div id="hubKeys" class="keys"><b>W A S D</b> yurish<b>Shift</b> yugurish<b>Space</b> sakrash<b>Sichqoncha</b> qarash<b>Enter</b> chat<b>T</b> mikrofon<b>Esc</b> kursor</div>
+</div>
 <div id="gToast"></div>
 <div id="confirm" class="modal hidden"><div class="mbox center"><div id="cfText"></div><div class="row"><button id="cfYes" class="btn orange">Ha</button><button id="cfNo" class="btn">Yo'q</button></div></div></div>
 

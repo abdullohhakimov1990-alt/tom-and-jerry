@@ -94,7 +94,8 @@ export class Match {
     c.addEventListener('wheel', this.h.wh, { passive: true }); document.addEventListener('pointerlockchange', this.h.pl); c.addEventListener('contextmenu', this.h.cm);
     // sichqonchasiz qurilmalar uchun: tortib qarash
     this.h.tm = e => { if (this.drag) { this.look((e.clientX - this.drag[0]) * 1.5, (e.clientY - this.drag[1]) * 1.5); this.drag = [e.clientX, e.clientY]; } };
-    this.h.td = e => { if (e.pointerType !== 'mouse') this.drag = [e.clientX, e.clientY]; };
+    // telefon — barmoq bilan; kompyuter — sichqoncha qulflanmasa, bosib sudrab qarash
+    this.h.td = e => { if (e.pointerType !== 'mouse' || document.pointerLockElement !== c) this.drag = [e.clientX, e.clientY]; };
     this.h.tu = () => { this.drag = null; };
     c.addEventListener('pointerdown', this.h.td); window.addEventListener('pointermove', this.h.tm); window.addEventListener('pointerup', this.h.tu);
     this.h.hb = e => { const sl = e.target.closest('.slot'); if (sl) { e.preventDefault(); this.useItem(+sl.dataset.i); } };
@@ -394,7 +395,7 @@ export class Match {
     ];
     N.armDisconnect(room);
     this.chatInit();
-    this.voice = new Voice(N, room, this.app.user.uid, this.net.opp, () => this.voiceUI());
+    this.voice = new Voice(o => N.sendEvent(room, Object.assign({ type: 'rtc' }, o)), this.app.user.uid < this.net.opp, () => this.voiceUI());
     const nick = (this.net.oppInfo || {}).nick || "Do'st";
     hud.say(`Siz ${this.me === 'tom' ? 'TOM' : 'JERRY'} bo'ldingiz! Raqib: ${nick}`, 'gold', 4.5);
   }

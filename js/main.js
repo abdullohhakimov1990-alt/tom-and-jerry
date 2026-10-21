@@ -8,6 +8,7 @@ import { createBackend } from './backend.js';
 import { makeStage } from './stage.js';
 import { ui } from './ui.js';
 import { Match } from './match.js';
+import { Hub } from './hub.js';
 import { initOnline } from './online.js';
 import { START_WALLET, CHAR_PRICE, ADMIN_WALLET, SETS, ICONS, COLORS, MUSIC, ITEMS, GIFT_MAX, RESET, SUPER_ADMINS } from './catalog.js';
 import * as SND from './audio.js';
@@ -205,6 +206,7 @@ app.selectChar = async kind => {
 // ---------------- o'yin ----------------
 app.startMatch = (opts = {}) => {
   if (app.match) return;
+  if (app.hub) app.leaveHub();
   goLandscape();
   SND.initAudio(); SND.setVolumes(app.settings.vol, app.settings.musVol, true); SND.stopMusic();
   ui.close('shop'); ui.close('friends'); ui.close('result');
@@ -212,6 +214,21 @@ app.startMatch = (opts = {}) => {
   app.stage.show(false);
   app.match = new Match(app, opts.role || app.data.char, opts.net);
   app.match.lock();
+};
+// ---------------- HUB (onlayn o'yinchilar birga) ----------------
+app.enterHub = () => {
+  if (app.match || app.hub) return;
+  if (!app.backend.net) { ui.toast("Hub uchun internet aloqasi kerak", true); return; }
+  goLandscape();
+  SND.initAudio(); SND.setVolumes(app.settings.vol, app.settings.musVol, true);
+  ui.close('shop'); ui.close('friends'); ui.close('result');
+  $('menu').classList.add('hidden'); app.stage.show(false);
+  app.hub = new Hub(app); app.hub.lock();
+};
+app.leaveHub = () => {
+  if (!app.hub) return;
+  app.hub.dispose(); app.hub = null;
+  $('menu').classList.remove('hidden'); app.stage.show(true); ui.renderTop();
 };
 app.pause = () => {
   const m = app.match; if (!m || m.paused || m.phase === 'end') return;
@@ -252,6 +269,7 @@ function loop(now) {
   app.shakeAmt = Math.max(0, app.shakeAmt - dt * 1.5);
   if (!document.hidden) adaptResolution(dt, app.settings.autoRes);
   if (app.match) app.match.update(dt);
+  else if (app.hub) app.hub.update(dt);
   else { app.stage.update(dt, T); ui.placeCards(); }
   render();
 }
