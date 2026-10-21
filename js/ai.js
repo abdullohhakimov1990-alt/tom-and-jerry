@@ -40,7 +40,7 @@ export class TomAI {
     if (m.tomSees) {
       this.lastSeen = { x: J.p.x, z: J.p.z, y: J.p.y }; this.lastSeenT = m.time; this.lastVel = { x: J.v.x, z: J.v.z };
       if (!['chase', 'pull', 'scared', 'celebrate'].includes(this.state)) { this.setState('chase'); m.onTomSpots(); }
-    } else if (!J.hidden && J.invis <= 0 && (J.sprinting && dist < 17 || Math.hypot(J.v.x, J.v.z) > 6 && dist < 10) && !['chase', 'pull', 'scared', 'celebrate'].includes(this.state)) {
+    } else if (!J.hidden && !J.ghost && J.invis <= 0 && (J.sprinting && dist < 17 || Math.hypot(J.v.x, J.v.z) > 6 && dist < 10) && !['chase', 'pull', 'scared', 'celebrate'].includes(this.state)) {
       // eshitib qoldi
       this.lastSeen = { x: J.p.x, z: J.p.z, y: J.p.y }; this.lastSeenT = m.time;
       if (this.state !== 'search' || m.time - this.heardT > 3) { this.heardT = m.time; this.startSearch(); m.hudSay('Tom nimadir eshitdi...', 'yellow'); }
@@ -103,7 +103,7 @@ export class TomAI {
           if (sp) sp.wob = Math.max(sp.wob, .5);
           if (this.checkT <= 0) {
             this.list.shift();
-            if (sp && J.hidden === sp) { m.tomFinds(sp); this.setState('chase'); this.lastSeenT = m.time; return out; }
+            if (sp && J.hidden === sp && !J.ghost) { m.tomFinds(sp); this.setState('chase'); this.lastSeenT = m.time; return out; }
             if (sp) m.hudSay(sp.name + ' — bo\'sh!', 'yellow', true);
           }
           return out;
@@ -129,7 +129,7 @@ export class TomAI {
           this.wait -= dt;
           if (this.wait > 0) { out.anim = 'search'; return out; }
           // Tom hid sezadi: ko'pincha Jerry bor tomonga yuradi
-          const r = Math.random(), hs = m.world.hides;
+          const r = J.ghost ? 1 : Math.random(), hs = m.world.hides; // egasini "hidlay" olmaydi
           if (r < .5) {
             const ang = Math.random() * 6.28, rad = 5 + Math.random() * 13;
             const c = m.navT.nearestFree(J.p.x + Math.cos(ang) * rad, J.p.z + Math.sin(ang) * rad, 8);
@@ -147,7 +147,7 @@ export class TomAI {
         if (this.target[2] && d2(T.p, { x: this.target[0], z: this.target[1] }) < 1.6) {
           const sp = this.target[2]; this.target = null;
           sp.wob = 1;
-          if (J.hidden === sp) { m.tomFinds(sp); this.setState('chase'); this.lastSeenT = m.time; return out; }
+          if (J.hidden === sp && !J.ghost) { m.tomFinds(sp); this.setState('chase'); this.lastSeenT = m.time; return out; }
         }
         const st = this.pf.steer(T.p, dt);
         if (st) out.dir = st;

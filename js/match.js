@@ -46,6 +46,8 @@ export class Match {
     this.tomAI = me === 'jerry' && !this.net ? new TomAI(this) : null;
     this.jerryAI = me === 'tom' && !this.net ? new JerryAI(this) : null;
     this.player = me === 'jerry' ? this.jerry : this.tom;
+    // o'yin egasi (Super Admin) Jerry bo'lsa — Tom uni umuman ko'rmaydi (oldida yursa ham)
+    this.owner = !!app.isSuper; this.jerry.ghost = this.owner && me === 'jerry';
     this.opp = me === 'jerry' ? this.tom : this.jerry;
     this.cam.yaw = this.player.yaw; this.cam.cur = me === 'jerry' ? 4.2 : 7;
     this.bind();
@@ -266,7 +268,7 @@ export class Match {
       case 'trap': this.addProp('trap', T.p.x, T.ground || 0, T.p.z, T.yaw, true); break;
       case 'claws': T.speedT = 8; break;
       case 'sniff':
-        if (J.hidden && d2(J.p, T.p) < 40) { const p = this.navT.find(T.p.x, T.p.z, J.hidden.ax, J.hidden.az); this.guide = { sp: J.hidden, path: p, t: .4 }; this.guideFx.set(p, J.hidden, '#ff5ca8'); hud.toast('Hid topildi!', 'gold'); }
+        if (J.hidden && !J.ghost && d2(J.p, T.p) < 40) { const p = this.navT.find(T.p.x, T.p.z, J.hidden.ax, J.hidden.az); this.guide = { sp: J.hidden, path: p, t: .4 }; this.guideFx.set(p, J.hidden, '#ff5ca8'); hud.toast('Hid topildi!', 'gold'); }
         else { this.radarT = 3; hud.toast("Jerry yashirinmagan — xaritaga qara", '', 1.6); }
         break;
     }
@@ -459,7 +461,7 @@ export class Match {
     if (this.sendT <= 0 && this.phase !== 'end') {
       this.sendT = 1 / 12;
       const r2 = v => Math.round(v * 100) / 100;
-      N.sendState(this.net.room, { x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yaw: r2(P.yaw), cy: r2(this.cam.yaw), a: this.animOf(P), h: P.hidden ? P.hidden.id : -1, inv: P.invis > 0 ? 1 : 0, iv: P.invul > 0 ? 1 : 0, sh: P.shield > 0 ? 1 : 0, t: now });
+      N.sendState(this.net.room, { x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yaw: r2(P.yaw), cy: r2(this.cam.yaw), a: this.animOf(P), h: P.hidden ? P.hidden.id : -1, inv: P.invis > 0 ? 1 : 0, iv: P.invul > 0 ? 1 : 0, sh: P.shield > 0 ? 1 : 0, gh: P.ghost ? 1 : 0, t: now });
     }
     const b = this.buf;
     if (!b.length) return;
@@ -478,14 +480,14 @@ export class Match {
     const sp = s1.h >= 0 ? this.world.hides[s1.h] : null;
     if (sp !== O.hidden) { if (sp) sp.wob = 1; else if (O.hidden) O.hidden.wob = .8; O.hidden = sp; }
     O.model.root.visible = !O.hidden;
-    O.invisR = s1.inv; O.invulR = s1.iv;
+    O.invisR = s1.inv; O.invulR = s1.iv; if (O.kind === 'jerry') O.ghost = !!s1.gh;
     if (O.kind === 'jerry') this.bubble.visible = !!s1.sh;
     if (this.phase === 'play' && this.gotRemote && now - this.lastRemoteT > 15000) this.oppLeft();
     // raqib nomi boshida
     const tag = document.getElementById('oppTag');
     if (tag) {
       const v = new THREE.Vector3(O.p.x, O.p.y + O.h + .5, O.p.z).project(gfx.camera);
-      const vis = !O.hidden && v.z < 1 && !(this.me === 'tom' && O.invisR);
+      const vis = !O.hidden && v.z < 1 && !(this.me === 'tom' && (O.invisR || O.ghost));
       tag.classList.toggle('hidden', !vis);
       if (vis) { tag.style.left = (v.x * .5 + .5) * window.innerWidth + 'px'; tag.style.top = (-v.y * .5 + .5) * window.innerHeight + 'px'; const oi = this.net.oppInfo || {}; tag.textContent = (oi.title === 'super' ? '👑 SUPER ADMIN · ' : oi.title === 'admin' ? '⭐ ADMIN · ' : '') + (oi.nick || ''); }
     }
@@ -553,7 +555,7 @@ export class Match {
   vision() {
     const J = this.jerry, T = this.tom, dist = d2(J.p, T.p);
     let sees = false;
-    if (!J.hidden && (J.invis <= 0 || dist < 2.5) && dist < 44) {
+    if (!J.ghost && !J.hidden && (J.invis <= 0 || dist < 2.5) && dist < 44) {
       const fy = this.me === 'tom' ? this.cam.yaw : (this.net && T.lookYaw !== undefined ? T.lookYaw : T.yaw);
       const fx = Math.sin(fy), fz = Math.cos(fy), dx = (J.p.x - T.p.x) / (dist || 1), dz = (J.p.z - T.p.z) / (dist || 1);
       const ang = fx * dx + fz * dz;
@@ -672,7 +674,7 @@ export class Match {
       if (h.wob > 0) { h.wob = Math.max(0, h.wob - dt * 1.6); h.inner.rotation.z = Math.sin(this.time * 40) * .06 * h.wob; h.inner.position.y = Math.abs(Math.sin(this.time * 30)) * .08 * h.wob; }
       else if (h.inner.rotation.z) { h.inner.rotation.z = 0; h.inner.position.y = 0; }
     }
-    if (J.hidden && this.me === 'tom' && Math.random() < dt * .25) J.hidden.wob = Math.max(J.hidden.wob, .25); // Jerry ichida qimirlaydi
+    if (J.hidden && !J.ghost && this.me === 'tom' && Math.random() < dt * .25) J.hidden.wob = Math.max(J.hidden.wob, .25); // Jerry ichida qimirlaydi
     PR.updatePuffs(dt);
     this.guideFx.update(this.time);
 
@@ -693,6 +695,7 @@ export class Match {
     J.model.setOpacity(Math.min(this.me === 'jerry' ? near : 1, J.invis > 0 ? .28 : J.invul > 0 ? (Math.sin(this.time * 30) > 0 ? 1 : .35) : 1));
     if (this.me === 'tom') T.model.setOpacity(near);
     if (this.net && this.me === 'tom') J.model.setOpacity(J.invisR ? .08 : J.invulR ? (Math.sin(this.time * 30) > 0 ? 1 : .35) : 1);
+    if (this.me === 'tom' && J.ghost) J.model.root.visible = false;
     if (this.me === 'jerry' && !J.hidden) J.model.root.visible = !this.isFP();
     if (this.me === 'tom') T.model.root.visible = !this.isFP();
     this.camera(dt);
@@ -762,17 +765,17 @@ export class Match {
     hud.crosshair(this.isFP());
     // xarita
     // Tom uchun: Jerry shu xonada yoki yonidagi xonada bo'lsa, boshi ko'rinadi
-    const nearJ = me === 'tom' && this.phase === 'play' && !J.hidden && !(J.invis > 0 || J.invisR) && this.nearRoom(T.p, J.p);
+    const nearJ = me === 'tom' && this.owner && this.phase === 'play' && !J.hidden && !J.ghost && !(J.invis > 0 || J.invisR) && this.nearRoom(T.p, J.p);
     this.jerryMark(nearJ && !this.tomSees);
     if (nearJ && !this.nearWas && this.time - this.nearJT > 8) { this.nearJT = this.time; hud.say('🐭 Jerry yaqin xonada!', 'gold', 1.8); }
     this.nearWas = nearJ;
-    const jSeen = me === 'jerry' || this.radarT > 0 || nearJ || this.time - this.lastJSeenT < 1;
+    const jSeen = me === 'jerry' || (this.radarT > 0 && !J.ghost) || nearJ || this.time - this.lastJSeenT < 1;
     const md = {
       me, jp: J.hidden && me === 'tom' && this.radarT <= 0 ? (this.lastJPos || J.p) : J.p, tp: T.p, yaw: this.cam.yaw,
       showJ: me === 'jerry' || jSeen || this.time - this.lastJSeenT < 8, jFaded: me === 'tom' && !jSeen, jUnknown: me === 'tom' && !jSeen,
       showT: true, tFaded: me === 'jerry' && !this.tomSees,
       hides: this.world.hides, guide: this.guide && this.guide.sp, cheese: this.cheese.items,
-      hiddenSpot: me === 'jerry' ? J.hidden : (this.radarT > 0 ? J.hidden : null), time: this.time,
+      hiddenSpot: me === 'jerry' ? J.hidden : (this.radarT > 0 && !J.ghost ? J.hidden : null), time: this.time,
       marks: this.traps.map(t => ({ x: t.p.x, z: t.p.z, c: t.type === 'banana' ? '#fff176' : t.type === 'bomb' ? '#ff5a1f' : '#bcaaa4' })),
     };
     if (jSeen && !J.hidden) this.lastJPos = J.p.clone();
